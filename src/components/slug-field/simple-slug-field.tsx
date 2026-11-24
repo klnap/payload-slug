@@ -2,6 +2,7 @@
 
 import { FieldLabel, TextInput, useField, useFormFields } from '@payloadcms/ui'
 import { type ChangeEvent, useEffect, useRef } from 'react'
+import { GenerateButton } from './generate-button.js'
 import { readFormFieldValue } from './read-form-field-value.js'
 import type { SlugFieldProps } from './slug-field.js'
 import { useGenerateFromSource } from './use-generate-from-source.js'
@@ -56,6 +57,17 @@ export const SimpleSlugField = ({
 
   return (
     <TextInput
+      AfterInput={
+        formDisabled ? undefined : (
+          <GenerateButton
+            onGenerate={async () => {
+              const next = (await generateFromSource()) ?? ''
+              lastGeneratedRef.current = next
+              setValue(next)
+            }}
+          />
+        )
+      }
       className='slug-field'
       Label={
         <FieldLabel
