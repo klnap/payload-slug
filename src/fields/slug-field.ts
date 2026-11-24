@@ -38,7 +38,7 @@ const buildDraftPlaceholderSlug = (
   return `${base}-${locale}`
 }
 
-export const slugField = ({ autoFrom, slugify, localized = false }: SlugFieldArgs): RowField => {
+export const slugField = ({ source, slugify, localized = false }: SlugFieldArgs): RowField => {
   const usesCustomSlugify = typeof slugify === 'function'
 
   const slugCustom: SlugFieldCustom = {}
@@ -47,7 +47,7 @@ export const slugField = ({ autoFrom, slugify, localized = false }: SlugFieldArg
   }
 
   const clientProps: SlugFieldClientProps = {
-    autoFrom,
+    source,
     usesCustomSlugify,
     slugLocalized: localized,
   }
@@ -127,7 +127,7 @@ export const slugField = ({ autoFrom, slugify, localized = false }: SlugFieldArg
 
               const operationData = (data ?? {}) as Record<string, unknown>
               const original = originalDoc as Record<string, unknown> | null | undefined
-              const sourceValue = resolveAutoFromSource(autoFrom, operationData, original)
+              const sourceValue = resolveAutoFromSource(source, operationData, original)
               const generated = await produceSlugValue(
                 slugify,
                 sourceValue,
@@ -140,7 +140,7 @@ export const slugField = ({ autoFrom, slugify, localized = false }: SlugFieldArg
                 return generated
               }
 
-              // Draft autosave on create often runs before `autoFrom` has a value — use a unique
+              // Draft autosave on create often runs before `source` has a value — use a unique
               // placeholder so `unique` + `required` do not fail; real slug is generated once title exists.
               if (operation === 'create') {
                 if (typeof value === 'string' && value.trim()) {

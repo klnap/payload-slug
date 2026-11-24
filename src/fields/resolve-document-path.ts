@@ -1,6 +1,6 @@
 /**
  * Resolves an absolute document field path from the root of `data`.
- * `autoFrom` is always document-absolute, not relative to slug placement.
+ * `source` is always document-absolute, not relative to slug placement.
  */
 export const resolveDocumentPath = (
   data: Record<string, unknown> | null | undefined,

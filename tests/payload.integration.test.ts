@@ -20,7 +20,7 @@ beforeAll(async () => {
       {
         slug: 'pages',
         versions: { drafts: true },
-        fields: [{ name: 'title', type: 'text' }, slugField({ autoFrom: 'title' })],
+        fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title' })],
       },
     ],
   })

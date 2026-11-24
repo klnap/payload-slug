@@ -31,7 +31,7 @@ export default buildConfig({
   collections: [
     {
       slug: 'pages',
-      fields: [{ name: 'title', type: 'text' }, slugField({ autoFrom: 'title' })],
+      fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title' })],
     },
   ],
 })
@@ -45,7 +45,7 @@ Then run `payload generate:importmap` so the admin field component is registered
 
 | Situation | Result |
 | --- | --- |
-| Create or update in Auto mode | Slug is generated from `autoFrom`. |
+| Create or update in Auto mode | Slug is generated from `source`. |
 | Auto mode, source empty on update | Existing slug is kept. |
 | Auto mode, source empty on create | A submitted slug is kept, otherwise `draft-<uuid>` (so drafts stay unique). |
 | Manual mode | The submitted slug is normalized (`My Slug` becomes `my-slug`). Source changes do not touch it. |
@@ -62,7 +62,7 @@ Default normalization uses [`slugify`](https://www.npmjs.com/package/slugify) (`
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `autoFrom` | required | Path of the source field from the document root, for example `title` or `meta.title`. |
+| `source` | required | Path of the source field from the document root, for example `title` or `meta.title`. |
 | `slugify` | `slugify` package | `({ valueToSlugify, data, req }) => string \| undefined`. Runs on the server and may be async. |
 | `localized` | `false` | Localizes `slug` and `slugMode`. The default slugify then applies rules for the active locale. |
 

@@ -7,17 +7,17 @@ const hasResolvableValue = (value: unknown): boolean => {
 }
 
 export const resolveAutoFromSource = (
-  autoFrom: string,
+  source: string,
   data: Record<string, unknown>,
   originalDoc?: Record<string, unknown> | null,
 ): unknown => {
-  const fromIncoming = resolveDocumentPath(data, autoFrom)
+  const fromIncoming = resolveDocumentPath(data, source)
   if (hasResolvableValue(fromIncoming)) {
     return fromIncoming
   }
 
   if (originalDoc) {
-    return resolveDocumentPath(originalDoc, autoFrom)
+    return resolveDocumentPath(originalDoc, source)
   }
 
   return undefined

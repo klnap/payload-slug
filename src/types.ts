@@ -9,7 +9,7 @@ export type SlugifyFunction = (args: {
 }) => string | undefined | Promise<string | undefined>
 
 export type SlugFieldArgs = {
-  autoFrom: string
+  source: string
   slugify?: SlugifyFunction
   /** Applied to `slug` and `slugMode` when the host needs localized slugs. */
   localized?: boolean
@@ -17,7 +17,7 @@ export type SlugFieldArgs = {
 
 /** Serializable props passed to the admin field component. Not part of the public API. */
 export type SlugFieldClientProps = {
-  autoFrom: string
+  source: string
   usesCustomSlugify: boolean
   /** Mirrors `slugField({ localized })` — drives locale-aware default slugify in admin. */
   slugLocalized: boolean
