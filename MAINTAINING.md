@@ -53,7 +53,7 @@ Do not report Trusted Publishing as verified before a CI publish has succeeded.
 
 ## GitHub settings (required)
 
-Public repo, default branch `main`, squash/rebase merges only, delete branch on merge. Ruleset on `main`: required `verify` and `security` checks, no force-push, no deletion, no required approvals (solo maintainer). Ruleset on `v*` tags: no update or deletion. Environment `npm`, limited to `v*` tags.
+Public repo, default branch `main`, squash/rebase merges only, delete branch on merge. Changes reach `main` through pull requests, including release commits. Ruleset on `main`: required `verify` and `security` checks, no force-push, no deletion, no required approvals (solo maintainer). Ruleset on `v*` tags: no update or deletion. Environment `npm`, limited to `v*` tags.
 
 ## Extracting from a monorepo (required)
 
