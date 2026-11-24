@@ -1,7 +1,7 @@
 {
   "name": "@klnap/payload-slug",
   "version": "0.1.0",
-  "description": "Payload CMS slug field with a persisted Auto/Manual mode, server-authoritative generation, and custom slugify support.",
+  "description": "Payload CMS slug field that fills itself from another field, with an optional persisted Auto/Manual mode and custom slugify support.",
   "keywords": [
     "payload",
     "payloadcms",

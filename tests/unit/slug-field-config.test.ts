@@ -4,8 +4,14 @@ import { slugField } from '../../src/fields/slug-field.js'
 import { collectFields, slugFieldOutputHasLayoutAdmin } from '../field-tree.js'
 
 describe('slugField config', () => {
-  it('returns a row with slug and slugMode', () => {
+  it('returns only a plain slug field by default', () => {
     const field = slugField({ source: 'title' })
+    expect(field.type).toBe('text')
+    expect('name' in field && field.name).toBe('slug')
+  })
+
+  it('returns a row with slug and slugMode when autoManual is on', () => {
+    const field = slugField({ source: 'title', autoManual: true })
     expect(field.type).toBe('row')
     const names = collectFields(field).map((f) => ('name' in f ? f.name : undefined))
     expect(names).toContain('slug')
@@ -35,6 +41,7 @@ describe('slugField config', () => {
         source: 'meta.title',
         usesCustomSlugify: true,
         slugLocalized: false,
+        autoManual: false,
       },
     })
   })

@@ -1,4 +1,4 @@
-import { type RowField, ValidationError } from 'payload'
+import { type Field, ValidationError } from 'payload'
 import { SLUG_FIELD_IMPORT_PATH } from '../integration/import-map-paths.js'
 import type { SlugFieldArgs, SlugFieldClientProps, SlugifyFunction } from '../types.js'
 import { generateSlugFromValue } from './generate-slug.js'
@@ -38,7 +38,12 @@ const buildDraftPlaceholderSlug = (
   return `${base}-${locale}`
 }
 
-export const slugField = ({ source, slugify, localized = false }: SlugFieldArgs): RowField => {
+export const slugField = ({
+  source,
+  slugify,
+  localized = false,
+  autoManual = false,
+}: SlugFieldArgs): Field => {
   const usesCustomSlugify = typeof slugify === 'function'
 
   const slugCustom: SlugFieldCustom = {}
@@ -50,12 +55,97 @@ export const slugField = ({ source, slugify, localized = false }: SlugFieldArgs)
     source,
     usesCustomSlugify,
     slugLocalized: localized,
+    autoManual,
   }
+
+  const slug: Field = {
+    name: 'slug',
+    type: 'text',
+    required: true,
+    unique: true,
+    index: true,
+    localized,
+    admin: {
+      components: {
+        Field: {
+          path: SLUG_FIELD_IMPORT_PATH,
+          clientProps,
+        },
+      },
+    },
+    custom: slugCustom,
+    hooks: {
+      beforeChange: [
+        async ({ value, data, originalDoc, siblingData, previousSiblingDoc, operation, req }) => {
+          const operationData = (data ?? {}) as Record<string, unknown>
+          const original = originalDoc as Record<string, unknown> | null | undefined
+          const hasValue = typeof value === 'string' && value.trim() !== ''
+          const originalSlug =
+            typeof original?.slug === 'string' && original.slug.trim() ? original.slug : undefined
+
+          const slugMode = autoManual
+            ? resolveSlugMode({
+                operation,
+                siblingData: siblingData as Record<string, unknown> | undefined,
+                previousSiblingDoc: previousSiblingDoc as Record<string, unknown> | undefined,
+              })
+            : 'manual'
+
+          // Without autoManual a submitted slug is the editor's; generation only fills a gap.
+          // `undefined` means the slug was not part of the update, so the stored one stays.
+          const generate = autoManual
+            ? slugMode === 'auto'
+            : !hasValue && !(value === undefined && originalSlug)
+
+          if (!generate) {
+            if (!hasValue) return value === undefined ? originalSlug : value
+
+            const normalized = await produceSlugValue(
+              slugify,
+              (value as string).replace(/\s+/g, '-'),
+              operationData,
+              req,
+              localized,
+            )
+
+            if (normalized?.trim()) return normalized
+
+            // Never store the raw input: it may contain characters the slug rules reject.
+            throw new ValidationError({
+              errors: [{ message: SLUG_EMPTY_MESSAGE, path: 'slug' }],
+            })
+          }
+
+          const sourceValue = resolveAutoFromSource(source, operationData, original)
+          const generated = await produceSlugValue(
+            slugify,
+            sourceValue,
+            operationData,
+            req,
+            localized,
+          )
+
+          if (generated?.trim()) {
+            return generated
+          }
+
+          // Draft autosave on create often runs before `source` has a value — use a unique
+          // placeholder so `unique` + `required` do not fail; real slug is generated once title exists.
+          if (operation === 'create') {
+            return hasValue ? value : buildDraftPlaceholderSlug(operationData, req, localized)
+          }
+
+          return hasValue ? value : (originalSlug ?? value)
+        },
+      ],
+    },
+  }
+
+  if (!autoManual) return slug
+
   return {
     type: 'row',
-    admin: {
-      className: 'slug-field-row',
-    },
+    admin: { className: 'slug-field-row' },
     fields: [
       {
         name: 'slugMode',
@@ -66,101 +156,9 @@ export const slugField = ({ source, slugify, localized = false }: SlugFieldArgs)
           { label: 'Manual', value: 'manual' },
         ],
         localized,
-        admin: {
-          hidden: true,
-        },
+        admin: { hidden: true },
       },
-      {
-        name: 'slug',
-        type: 'text',
-        required: true,
-        unique: true,
-        index: true,
-        localized,
-        admin: {
-          components: {
-            Field: {
-              path: SLUG_FIELD_IMPORT_PATH,
-              clientProps,
-            },
-          },
-        },
-        custom: slugCustom,
-        hooks: {
-          beforeChange: [
-            async ({
-              value,
-              data,
-              originalDoc,
-              siblingData,
-              previousSiblingDoc,
-              operation,
-              req,
-            }) => {
-              const slugMode = resolveSlugMode({
-                operation,
-                siblingData: siblingData as Record<string, unknown> | undefined,
-                previousSiblingDoc: previousSiblingDoc as Record<string, unknown> | undefined,
-              })
-
-              if (slugMode === 'manual') {
-                if (typeof value !== 'string' || !value.trim()) {
-                  return value
-                }
-
-                const prepared = value.replace(/\s+/g, '-')
-                const normalized = await produceSlugValue(
-                  slugify,
-                  prepared,
-                  (data ?? {}) as Record<string, unknown>,
-                  req,
-                  localized,
-                )
-
-                if (normalized?.trim()) return normalized
-
-                // Never store the raw input: it may contain characters the slug rules reject.
-                throw new ValidationError({
-                  errors: [{ message: SLUG_EMPTY_MESSAGE, path: 'slug' }],
-                })
-              }
-
-              const operationData = (data ?? {}) as Record<string, unknown>
-              const original = originalDoc as Record<string, unknown> | null | undefined
-              const sourceValue = resolveAutoFromSource(source, operationData, original)
-              const generated = await produceSlugValue(
-                slugify,
-                sourceValue,
-                operationData,
-                req,
-                localized,
-              )
-
-              if (generated?.trim()) {
-                return generated
-              }
-
-              // Draft autosave on create often runs before `source` has a value — use a unique
-              // placeholder so `unique` + `required` do not fail; real slug is generated once title exists.
-              if (operation === 'create') {
-                if (typeof value === 'string' && value.trim()) {
-                  return value
-                }
-                return buildDraftPlaceholderSlug(operationData, req, localized)
-              }
-
-              const existing =
-                typeof value === 'string' && value.trim()
-                  ? value
-                  : typeof original?.slug === 'string'
-                    ? original.slug
-                    : value
-
-              return existing
-            },
-          ],
-        },
-      },
+      slug,
     ],
   }
 }

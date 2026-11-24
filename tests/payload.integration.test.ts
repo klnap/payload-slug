@@ -20,6 +20,10 @@ beforeAll(async () => {
       {
         slug: 'pages',
         versions: { drafts: true },
+        fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title', autoManual: true })],
+      },
+      {
+        slug: 'posts',
         fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title' })],
       },
     ],
@@ -73,5 +77,22 @@ describe('slugField with Payload and a real database', () => {
     const b = await create({}, true)
     expect(a.slug).toMatch(/^draft-/)
     expect(b.slug).not.toBe(a.slug)
+  })
+
+  it('without autoManual fills an empty slug and then leaves it alone', async () => {
+    const doc = await payload.create({ collection: 'posts', data: { title: 'First Post' } })
+    expect(doc.slug).toBe('first-post')
+    expect('slugMode' in doc).toBe(false)
+    const renamed = await payload.update({
+      collection: 'posts',
+      id: doc.id,
+      data: { title: 'Renamed' },
+    })
+    expect(renamed.slug).toBe('first-post')
+    const custom = await payload.create({
+      collection: 'posts',
+      data: { title: 'Another', slug: 'My Own' },
+    })
+    expect(custom.slug).toBe('my-own')
   })
 })
