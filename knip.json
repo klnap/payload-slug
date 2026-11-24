@@ -1,0 +1,8 @@
+{
+  "entry": [
+    "src/exports/index.ts",
+    "src/exports/admin/SlugField.ts",
+    "src/exports/server/index.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}"]
+}

@@ -1,0 +1,87 @@
+{
+  "name": "@klnap/payload-slug",
+  "version": "0.1.0",
+  "description": "Payload CMS slug field with a persisted Auto/Manual mode, server-authoritative generation, and custom slugify support.",
+  "keywords": [
+    "payload",
+    "payloadcms",
+    "payload-plugin",
+    "slug",
+    "slugify",
+    "cms",
+    "field"
+  ],
+  "homepage": "https://github.com/klnap/payload-slug#readme",
+  "bugs": {
+    "url": "https://github.com/klnap/payload-slug/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/klnap/payload-slug.git"
+  },
+  "license": "MIT",
+  "author": "klnap",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/exports/index.d.ts",
+      "default": "./dist/exports/index.js"
+    },
+    "./admin/SlugField": {
+      "types": "./dist/exports/admin/SlugField.d.ts",
+      "default": "./dist/exports/admin/SlugField.js"
+    },
+    "./server": {
+      "types": "./dist/exports/server/index.d.ts",
+      "default": "./dist/exports/server/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && mkdir -p dist/styles && cp src/styles/*.css dist/styles/ && sed -i \"/\\.css.;/d\" dist/components/slug-field/slug-field.d.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "bun test",
+    "lint": "biome check .",
+    "knip": "knip",
+    "check:package": "publint --strict && attw --pack . --profile esm-only",
+    "prepack": "bun run build"
+  },
+  "peerDependencies": {
+    "@payloadcms/ui": ">=3.94.1 <4",
+    "payload": ">=3.94.1 <4",
+    "react": "~19.0.9 || ~19.1.10 || ~19.2.9 || ^19.3.1",
+    "react-dom": "~19.0.9 || ~19.1.10 || ~19.2.9 || ^19.3.1"
+  },
+  "dependencies": {
+    "slugify": "^1.6.9"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@biomejs/biome": "2.6.8",
+    "@payloadcms/db-sqlite": "3.94.1",
+    "@payloadcms/ui": "3.94.1",
+    "@types/bun": "^1.4.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "knip": "^6.48.0",
+    "payload": "3.94.1",
+    "publint": "^0.3.25",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": "^22.23.5 || ^24.22.3 || >=26.13.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
