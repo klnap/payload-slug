@@ -16,7 +16,10 @@ If you want a slug that stabilizes after publishing, use Payload's native field 
 
 ```sh
 bun add @klnap/payload-slug
-# or: npm install @klnap/payload-slug
+```
+
+```sh
+npm install @klnap/payload-slug
 ```
 
 ## Quick start

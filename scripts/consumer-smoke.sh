@@ -26,7 +26,7 @@ const config = await buildConfig({
   secret: 's',
   plugins: [slug()],
   db: sqliteAdapter({ client: { url: 'file:./smoke.db' }, push: true }),
-  collections: [{ slug: 'pages', fields: [{ name: 'title', type: 'text' }, slugField({ autoFrom: 'title' })] }],
+  collections: [{ slug: 'pages', fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title' })] }],
 })
 assert.equal(typeof createSlugServerFunctions(config)['@klnap/payload-slug/slugify'], 'function')
 const payload = await getPayload({ config })
