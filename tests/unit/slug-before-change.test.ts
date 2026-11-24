@@ -14,7 +14,7 @@ type BeforeChangeHook = (args: {
 }) => Promise<unknown>
 
 const getSlugBeforeChange = (args: Parameters<typeof slugField>[0]): BeforeChangeHook => {
-  const row = slugField(args)
+  const row = slugField({ autoManual: true, ...args })
   const slug = collectFields(row).find((f) => 'name' in f && f.name === 'slug') as Field & {
     hooks?: { beforeChange?: BeforeChangeHook[] }
   }
@@ -141,5 +141,63 @@ describe('slug.beforeChange', () => {
       req,
     })
     expect(result).toBe('nested')
+  })
+})
+
+describe('slug.beforeChange without autoManual', () => {
+  const plain = () => getSlugBeforeChange({ source: 'title', autoManual: false })
+
+  it('fills an empty slug from the source', async () => {
+    const result = await plain()({
+      value: '',
+      operation: 'create',
+      data: { title: 'Hello World' },
+      req,
+    })
+    expect(result).toBe('hello-world')
+  })
+
+  it('keeps and normalizes a submitted slug when the source changes', async () => {
+    const result = await plain()({
+      value: 'My Slug',
+      operation: 'update',
+      data: { title: 'Other' },
+      originalDoc: { title: 'Hello', slug: 'my-slug' },
+      req,
+    })
+    expect(result).toBe('my-slug')
+  })
+
+  it('keeps the stored slug when the update does not include one', async () => {
+    const result = await plain()({
+      value: undefined,
+      operation: 'update',
+      data: { title: 'Other' },
+      originalDoc: { title: 'Hello', slug: 'stored' },
+      req,
+    })
+    expect(result).toBe('stored')
+  })
+
+  it('regenerates when the editor clears the slug', async () => {
+    const result = await plain()({
+      value: '',
+      operation: 'update',
+      data: { title: 'Fresh Title' },
+      originalDoc: { title: 'Hello', slug: 'stored' },
+      req,
+    })
+    expect(result).toBe('fresh-title')
+  })
+
+  it('rejects a slug that normalizes to empty', async () => {
+    await expect(
+      plain()({ value: '!!!', operation: 'create', data: { title: 'x' }, req }),
+    ).rejects.toBeInstanceOf(ValidationError)
+  })
+
+  it('uses a draft placeholder on create without a source', async () => {
+    const result = await plain()({ value: undefined, operation: 'create', data: {}, req })
+    expect(String(result)).toMatch(/^draft-/)
   })
 })

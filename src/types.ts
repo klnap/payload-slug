@@ -11,8 +11,14 @@ export type SlugifyFunction = (args: {
 export type SlugFieldArgs = {
   source: string
   slugify?: SlugifyFunction
-  /** Applied to `slug` and `slugMode` when the host needs localized slugs. */
+  /** Applied to `slug` (and `slugMode`) when the host needs localized slugs. */
   localized?: boolean
+  /**
+   * Adds a persisted Auto/Manual mode (`slugMode`). Auto regenerates the slug from `source` on
+   * every save; Manual keeps the editor's slug. Off by default: the slug is a plain field that is
+   * filled from `source` while it is empty.
+   */
+  autoManual?: boolean
 }
 
 /** Serializable props passed to the admin field component. Not part of the public API. */
@@ -21,4 +27,5 @@ export type SlugFieldClientProps = {
   usesCustomSlugify: boolean
   /** Mirrors `slugField({ localized })` — drives locale-aware default slugify in admin. */
   slugLocalized: boolean
+  autoManual: boolean
 }

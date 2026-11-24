@@ -1,27 +1,18 @@
 'use client'
 
-import {
-  FieldLabel,
-  TextInput,
-  useConfig,
-  useDocumentInfo,
-  useField,
-  useForm,
-  useFormFields,
-  useLocale,
-} from '@payloadcms/ui'
+import { FieldLabel, TextInput, useField, useForm, useFormFields } from '@payloadcms/ui'
 import type { TextFieldClientProps } from 'payload'
 import { type ChangeEvent, useCallback, useEffect, useRef } from 'react'
-import { generateSlugFromValue } from '../../fields/generate-slug.js'
-import { SLUGIFY_ENDPOINT_PATH } from '../../server/slugify-endpoint.js'
 import type { SlugFieldClientProps, SlugMode } from '../../types.js'
 import { readFormFieldValue } from './read-form-field-value.js'
+import { SimpleSlugField } from './simple-slug-field.js'
 import { slugModePathFromSlugPath } from './slug-mode-path.js'
+import { useGenerateFromSource } from './use-generate-from-source.js'
 import { useSlugTranslation } from './use-slug-t.js'
 
 import '../../styles/slug-field.css'
 
-type SlugFieldProps = TextFieldClientProps & SlugFieldClientProps
+export type SlugFieldProps = TextFieldClientProps & SlugFieldClientProps
 
 const isSlugMode = (value: unknown): value is SlugMode => value === 'auto' || value === 'manual'
 
@@ -31,7 +22,7 @@ const slugFieldLayoutStyle = {
   minWidth: 0,
 } as const
 
-export const SlugField = ({
+const AutoManualSlugField = ({
   source,
   usesCustomSlugify,
   slugLocalized,
@@ -52,13 +43,7 @@ export const SlugField = ({
 
   const slugMode: SlugMode = isSlugMode(slugModeValue) ? slugModeValue : 'auto'
 
-  const { getData, getDataByPath } = useForm()
-  const { collectionSlug } = useDocumentInfo()
-  const { code: localeCode } = useLocale()
-  const isSlugLocalized = slugLocalized === true || field.localized === true
-  const {
-    config: { routes, serverURL },
-  } = useConfig()
+  const { getDataByPath } = useForm()
   const t = useSlugTranslation()
 
   const lastManualSlugRef = useRef<string | null>(null)
@@ -86,48 +71,13 @@ export const SlugField = ({
     lastManualSlugRef.current = persisted.trim() ? persisted : ''
   }, [slugMode, slugValue])
 
-  const generateFromSource = useCallback(async (): Promise<string | undefined> => {
-    const valueToSlugify = getDataByPath(source)
-
-    if (usesCustomSlugify) {
-      if (!collectionSlug || !schemaPath) {
-        return undefined
-      }
-
-      const data = getData() as Record<string, unknown>
-      const response = await fetch(`${serverURL ?? ''}${routes.api}${SLUGIFY_ENDPOINT_PATH}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          collection: collectionSlug,
-          fieldPath: schemaPath,
-          valueToSlugify,
-          data,
-        }),
-      })
-      if (!response.ok) return undefined
-      const { slug: result } = (await response.json()) as { slug?: unknown }
-
-      return typeof result === 'string' ? result : undefined
-    }
-
-    return generateSlugFromValue(valueToSlugify, {
-      localized: isSlugLocalized,
-      locale: localeCode,
-    })
-  }, [
+  const generateFromSource = useGenerateFromSource({
     source,
-    collectionSlug,
-    getData,
-    getDataByPath,
-    isSlugLocalized,
-    localeCode,
-    schemaPath,
-    routes.api,
-    serverURL,
     usesCustomSlugify,
-  ])
+    slugLocalized,
+    fieldLocalized: field.localized,
+    schemaPath,
+  })
 
   const applyGeneratedSlug = useCallback(
     async (generationId: number) => {
@@ -234,3 +184,6 @@ export const SlugField = ({
     />
   )
 }
+
+export const SlugField = (props: SlugFieldProps) =>
+  props.autoManual ? <AutoManualSlugField {...props} /> : <SimpleSlugField {...props} />

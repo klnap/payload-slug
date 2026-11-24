@@ -1,14 +1,14 @@
 # @klnap/payload-slug
 
-A slug field for [Payload CMS](https://payloadcms.com) 3 with a persisted **Auto/Manual** mode. In Auto mode the server generates the slug from another field on every save. In Manual mode the editor owns the slug, and the server normalizes it.
+A slug field for [Payload CMS](https://payloadcms.com) 3. By default it is a plain, unique `slug` field that fills itself from another field while it is empty, in the admin as you type and on the server when the slug is missing. Optionally it adds a persisted **Auto/Manual** mode for editors who want a slug that always follows its source.
 
 ## Why
 
-Payload ships an experimental `slugField` that decides whether to regenerate a slug from autosave and publish heuristics. This package makes that decision explicit and visible:
+Payload ships an experimental `slugField` that decides whether to regenerate a slug from autosave and publish heuristics. This package keeps the common case simple and the other case explicit:
 
-- The mode is a stored field (`slugMode`), so behavior never depends on how many versions a document has.
-- Auto always follows the source field. Manual never changes unless the editor edits it.
-- The server is authoritative. Manual input is normalized with the same rules as generated slugs, and input that normalizes to nothing is rejected rather than stored.
+- Default: the slug is yours. It is generated only when empty and never overwritten afterwards.
+- `autoManual: true`: the mode is a stored field (`slugMode`), so behavior never depends on how many versions a document has. Auto follows the source on every save; Manual never changes unless the editor edits it.
+- The server is authoritative. Submitted slugs are normalized with the same rules as generated ones, and input that normalizes to nothing is rejected rather than stored.
 
 If you want a slug that stabilizes after publishing, use Payload's native field instead.
 
@@ -40,22 +40,31 @@ export default buildConfig({
 })
 ```
 
-Then run `payload generate:importmap` so the admin field component is registered, and regenerate your types: the field adds `slug` and `slugMode`.
+Then run `payload generate:importmap` so the admin field component is registered, and regenerate your types: the field adds `slug` (and `slugMode` with `autoManual`).
 
 `slug()` registers admin translations and the preview endpoint. It is optional unless you use a custom `slugify`; without it the admin shows English labels.
 
 ## Behavior
 
+Default (no `autoManual`):
+
 | Situation | Result |
 | --- | --- |
-| Create or update in Auto mode | Slug is generated from `source`. |
-| Auto mode, source empty on update | Existing slug is kept. |
-| Auto mode, source empty on create | A submitted slug is kept, otherwise `draft-<uuid>` (so drafts stay unique). |
-| Manual mode | The submitted slug is normalized (`My Slug` becomes `my-slug`). Source changes do not touch it. |
-| Manual slug that normalizes to empty (`!!!`) | Validation error. |
-| Duplicate slug | The save fails on the database unique constraint. No numeric suffix is appended. |
+| Slug empty in the admin | Follows `source` as you type, until you type a slug yourself. |
+| Create or update with an empty slug | Generated from `source` on the server. |
+| Slug submitted | Normalized (`My Slug` becomes `my-slug`). Source changes do not touch it. |
+| Update that does not include the slug | The stored slug is kept. |
+| Slug normalizes to empty (`!!!`) | Validation error. |
+| Empty slug and empty source on create | `draft-<uuid>`, so drafts stay unique. |
 
-Auto mode changes the slug whenever the source changes, including on published documents. Add an access or hook rule if published URLs must not move.
+With `autoManual: true`, `slug` and `slugMode` are stored and the admin shows an Auto/Manual toggle:
+
+| Mode | Result |
+| --- | --- |
+| Auto | Generated from `source` on every save, including on published documents. Add an access or hook rule if published URLs must not move. Empty source on update keeps the existing slug. |
+| Manual | The submitted slug is normalized and never overwritten by the source. |
+
+A duplicate slug fails on the database unique constraint. No numeric suffix is appended.
 
 Default normalization uses [`slugify`](https://www.npmjs.com/package/slugify) (`lower`, `strict`). Characters without a transliteration, such as CJK, are dropped. Pass a custom `slugify` for those scripts.
 
@@ -67,13 +76,14 @@ Default normalization uses [`slugify`](https://www.npmjs.com/package/slugify) (`
 | --- | --- | --- |
 | `source` | required | Path of the source field from the document root, for example `title` or `meta.title`. |
 | `slugify` | `slugify` package | `({ valueToSlugify, data, req }) => string \| undefined`. Runs on the server and may be async. |
-| `localized` | `false` | Localizes `slug` and `slugMode`. The default slugify then applies rules for the active locale. |
+| `localized` | `false` | Localizes `slug` (and `slugMode`). The default slugify then applies rules for the active locale. |
+| `autoManual` | `false` | Adds the persisted Auto/Manual mode described above. |
 
-The field is a `row` and sets no `admin.position`; place it where you need it.
+The field sets no `admin.position`; place it where you need it. With `autoManual` it is a `row` containing `slugMode` and `slug`.
 
 ### Custom `slugify`
 
-The admin previews Auto slugs live. With a custom `slugify`, the preview calls `POST /api/payload-slug/slugify`, an endpoint that `slug()` registers for you, so the `slug()` plugin is required. The endpoint needs a signed-in user with read access to the collection. Without a custom `slugify`, nothing else is needed.
+The admin previews generated slugs live. With a custom `slugify`, the preview calls `POST /api/payload-slug/slugify`, an endpoint that `slug()` registers for you, so the `slug()` plugin is required. The endpoint needs a signed-in user with read access to the collection. Without a custom `slugify`, nothing else is needed.
 
 ## Exports
 
