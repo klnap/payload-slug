@@ -12,11 +12,17 @@ Payload ships an experimental `slugField` that decides whether to regenerate a s
 
 If you want a slug that stabilizes after publishing, use Payload's native field instead.
 
+### Live in the admin
+
+The slug is computed client-side, so you see its state in the input as you type the source, before saving and without a server round trip. A generate icon inside the input, on the right, fills the slug from the source on click. Payload's native `slugField` is locked by default and generates through a server call when you click Generate or save, so the slug does not follow the source while you type.
+
 ## Install
 
 ```sh
 bun add @klnap/payload-slug
 ```
+
+or
 
 ```sh
 npm install @klnap/payload-slug
@@ -51,6 +57,7 @@ Default (no `modeToggle`):
 | Situation | Result |
 | --- | --- |
 | Slug empty in the admin | Follows `source` as you type, until you type a slug yourself. |
+| Generate icon clicked | Replaces the slug with one generated from `source`. |
 | Create or update with an empty slug | Generated from `source` on the server. |
 | Slug submitted | Normalized (`My Slug` becomes `my-slug`). Source changes do not touch it. |
 | Update that does not include the slug | The stored slug is kept. |
@@ -62,7 +69,7 @@ With `modeToggle: true`, `slug` and `slugMode` are stored and the admin shows an
 | Mode | Result |
 | --- | --- |
 | Auto | Generated from `source` on every save, including on published documents. Add an access or hook rule if published URLs must not move. Empty source on update keeps the existing slug. |
-| Manual | The submitted slug is normalized and never overwritten by the source. |
+| Manual | The submitted slug is normalized and never overwritten by the source. The generate icon fills it from `source` on demand. |
 
 A duplicate slug fails on the database unique constraint. No numeric suffix is appended.
 

@@ -3,6 +3,7 @@ const fieldEn = {
   modeManual: 'Manual',
   switchToManual: 'Switch to Manual',
   switchToAuto: 'Switch to Auto',
+  generate: 'Generate slug from source',
 }
 
 const fieldPl = {
@@ -10,6 +11,7 @@ const fieldPl = {
   modeManual: 'Manual',
   switchToManual: 'Przełącz na Manual',
   switchToAuto: 'Przełącz na Auto',
+  generate: 'Wygeneruj slug ze źródła',
 }
 
 const fieldDe = {
@@ -17,6 +19,7 @@ const fieldDe = {
   modeManual: 'Manual',
   switchToManual: 'Zu Manual wechseln',
   switchToAuto: 'Zu Auto wechseln',
+  generate: 'Slug aus der Quelle erzeugen',
 }
 
 /**

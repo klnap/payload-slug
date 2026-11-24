@@ -4,6 +4,7 @@ import { FieldLabel, TextInput, useField, useForm, useFormFields } from '@payloa
 import type { TextFieldClientProps } from 'payload'
 import { type ChangeEvent, useCallback, useEffect, useRef } from 'react'
 import type { SlugFieldClientProps, SlugMode } from '../../types.js'
+import { GenerateButton } from './generate-button.js'
 import { readFormFieldValue } from './read-form-field-value.js'
 import { SimpleSlugField } from './simple-slug-field.js'
 import { slugModePathFromSlugPath } from './slug-mode-path.js'
@@ -142,6 +143,18 @@ const ModeToggleSlugField = ({
 
   return (
     <TextInput
+      AfterInput={
+        formDisabled || isAuto ? undefined : (
+          <GenerateButton
+            onGenerate={async () => {
+              const next = (await generateFromSource()) ?? ''
+              setSlug(next)
+              hasInitializedManualRef.current = true
+              lastManualSlugRef.current = next
+            }}
+          />
+        )
+      }
       className='slug-field'
       Label={
         <div className='slug-field__label-row'>

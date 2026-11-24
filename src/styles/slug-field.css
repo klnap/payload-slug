@@ -55,3 +55,41 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Generate button sits inside the input, pinned to the right. */
+.slug-field .field-type__wrap {
+  position: relative;
+}
+
+.slug-field__actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: calc(var(--base, 20px) * 0.5);
+  display: flex;
+  align-items: center;
+}
+
+.slug-field:has(.slug-field__actions) input {
+  padding-inline-end: calc(var(--base, 20px) * 2);
+}
+
+.slug-field__generate {
+  display: inline-flex;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--theme-elevation-800, currentColor);
+  font-size: calc(var(--base, 20px) * 0.8);
+  cursor: pointer;
+}
+
+.slug-field__generate:hover:not(:disabled) {
+  color: var(--theme-elevation-1000, currentColor);
+}
+
+.slug-field__generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
