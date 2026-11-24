@@ -14,7 +14,7 @@ If you want a slug that stabilizes after publishing, use Payload's native field 
 
 ### Live in the admin
 
-The slug is computed client-side, so you see its state in the input as you type the source, before saving and without a server round trip. A generate icon inside the input, on the right, fills the slug from the source on click. Payload's native `slugField` is locked by default and generates through a server call when you click Generate or save, so the slug does not follow the source while you type.
+The slug is computed client-side, so you see its state in the input as you type the source, before saving. With the default slugify there is no server round trip; a custom `slugify` runs through the `slug()` endpoint. A generate icon inside the input, on the right, fills the slug from the source on click. Payload's native `slugField` is locked by default and generates through a server call when you click Generate or save, so the slug does not follow the source while you type.
 
 ## Install
 
