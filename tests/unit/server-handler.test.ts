@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import type { Field } from 'payload'
 import { slugField } from '../../src/fields/slug-field.js'
-import {
-  createSlugifyServerFunctionHandler,
-  handleSlugifyServerFunction,
-} from '../../src/server/slugify-server-function-handler.js'
+import { handleSlugifyServerFunction, slugifyEndpoint } from '../../src/server/slugify-endpoint.js'
 import { collectFields } from '../field-tree.js'
 
 const mockConfig = {
@@ -129,17 +126,24 @@ describe('handleSlugifyServerFunction', () => {
     ).rejects.toThrow('Unknown slug field: pages.missing')
   })
 
-  it('resolves promised config in the server function handler', async () => {
+  it('serves the slug as JSON through the endpoint handler', async () => {
     const row = slugField({ source: 'title' })
-    const handler = createSlugifyServerFunctionHandler(Promise.resolve(mockConfig))
-    const result = await handler({
-      collection: 'pages',
-      fieldPath: 'slug',
-      valueToSlugify: 'Hello World',
-      data: { title: 'Hello World' },
-      req: createReq([row]),
-    })
+    const req = {
+      ...(createReq([row]) as object),
+      json: async () => ({
+        collection: 'pages',
+        fieldPath: 'slug',
+        valueToSlugify: 'Hello World',
+        data: {},
+      }),
+    }
+    const response = await slugifyEndpoint.handler(req as never)
+    expect(await response.json()).toEqual({ slug: 'hello-world' })
+  })
 
-    expect(result).toBe('hello-world')
+  it('answers 403 for an anonymous endpoint call', async () => {
+    const req = { user: null, payload: { config: mockConfig }, json: async () => ({}) }
+    const response = await slugifyEndpoint.handler(req as never)
+    expect(response.status).toBe(403)
   })
 })

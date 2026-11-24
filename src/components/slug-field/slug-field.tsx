@@ -3,17 +3,17 @@
 import {
   FieldLabel,
   TextInput,
+  useConfig,
   useDocumentInfo,
   useField,
   useForm,
   useFormFields,
   useLocale,
-  useServerFunctions,
 } from '@payloadcms/ui'
 import type { TextFieldClientProps } from 'payload'
 import { type ChangeEvent, useCallback, useEffect, useRef } from 'react'
 import { generateSlugFromValue } from '../../fields/generate-slug.js'
-import { SLUGIFY_SERVER_FUNCTION_NAME } from '../../integration/server-function-name.js'
+import { SLUGIFY_ENDPOINT_PATH } from '../../server/slugify-endpoint.js'
 import type { SlugFieldClientProps, SlugMode } from '../../types.js'
 import { readFormFieldValue } from './read-form-field-value.js'
 import { slugModePathFromSlugPath } from './slug-mode-path.js'
@@ -21,7 +21,7 @@ import { useSlugTranslation } from './use-slug-t.js'
 
 import '../../styles/slug-field.css'
 
-export type SlugFieldProps = TextFieldClientProps & SlugFieldClientProps
+type SlugFieldProps = TextFieldClientProps & SlugFieldClientProps
 
 const isSlugMode = (value: unknown): value is SlugMode => value === 'auto' || value === 'manual'
 
@@ -56,7 +56,9 @@ export const SlugField = ({
   const { collectionSlug } = useDocumentInfo()
   const { code: localeCode } = useLocale()
   const isSlugLocalized = slugLocalized === true || field.localized === true
-  const { serverFunction } = useServerFunctions()
+  const {
+    config: { routes, serverURL },
+  } = useConfig()
   const t = useSlugTranslation()
 
   const lastManualSlugRef = useRef<string | null>(null)
@@ -93,15 +95,19 @@ export const SlugField = ({
       }
 
       const data = getData() as Record<string, unknown>
-      const result = await serverFunction({
-        name: SLUGIFY_SERVER_FUNCTION_NAME,
-        args: {
+      const response = await fetch(`${serverURL ?? ''}${routes.api}${SLUGIFY_ENDPOINT_PATH}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           collection: collectionSlug,
           fieldPath: schemaPath,
           valueToSlugify,
           data,
-        },
+        }),
       })
+      if (!response.ok) return undefined
+      const { slug: result } = (await response.json()) as { slug?: unknown }
 
       return typeof result === 'string' ? result : undefined
     }
@@ -118,7 +124,8 @@ export const SlugField = ({
     isSlugLocalized,
     localeCode,
     schemaPath,
-    serverFunction,
+    routes.api,
+    serverURL,
     usesCustomSlugify,
   ])
 

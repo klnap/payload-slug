@@ -33,10 +33,6 @@
     "./admin/SlugField": {
       "types": "./dist/exports/admin/SlugField.d.ts",
       "default": "./dist/exports/admin/SlugField.js"
-    },
-    "./server": {
-      "types": "./dist/exports/server/index.d.ts",
-      "default": "./dist/exports/server/index.js"
     }
   },
   "files": [

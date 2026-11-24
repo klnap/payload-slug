@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import type { SanitizedCollectionConfig, SanitizedConfig } from 'payload'
 import { Forbidden } from 'payload'
 
-import { handleSlugifyServerFunction } from './slugify-server-function-handler.js'
+import { handleSlugifyServerFunction } from './slugify-endpoint.js'
 
 const config = {} as SanitizedConfig
 

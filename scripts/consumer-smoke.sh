@@ -15,7 +15,6 @@ npm install --no-audit --no-fund \
 cat > smoke.mjs <<'JS'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { slug, slugField, generateSlug } from '@klnap/payload-slug'
-import { createSlugServerFunctions } from '@klnap/payload-slug/server'
 import { buildConfig, getPayload } from 'payload'
 import assert from 'node:assert/strict'
 
@@ -28,7 +27,7 @@ const config = await buildConfig({
   db: sqliteAdapter({ client: { url: 'file:./smoke.db' }, push: true }),
   collections: [{ slug: 'pages', fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title' })] }],
 })
-assert.equal(typeof createSlugServerFunctions(config)['@klnap/payload-slug/slugify'], 'function')
+assert.ok(config.endpoints.some((e) => e.path === '/payload-slug/slugify'))
 const payload = await getPayload({ config })
 const doc = await payload.create({ collection: 'pages', data: { title: 'Smoke Test' } })
 assert.equal(doc.slug, 'smoke-test')
