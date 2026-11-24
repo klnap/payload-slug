@@ -1,5 +1,7 @@
 import {
+  type Endpoint,
   executeAccess,
+  Forbidden,
   flattenAllFields,
   getFieldByPath,
   type SanitizedCollectionConfig,
@@ -8,7 +10,6 @@ import {
 } from 'payload'
 
 import { generateSlugFromValue } from '../fields/generate-slug.js'
-import { SLUGIFY_SERVER_FUNCTION_NAME } from '../integration/server-function-name.js'
 
 export type SlugifyServerFunctionArgs = {
   collection: string
@@ -67,16 +68,23 @@ export const handleSlugifyServerFunction = async (
   return generateSlugFromValue(valueToSlugify, { localized: slugLocalized, locale: req.locale })
 }
 
-export const createSlugifyServerFunctionHandler =
-  (config: SanitizedConfig | Promise<SanitizedConfig>) =>
-  async (args: HandlerArgs): Promise<string | undefined> => {
-    const resolvedConfig = await config
-    const { req, ...fnArgs } = args
-    return handleSlugifyServerFunction(resolvedConfig, fnArgs, req)
-  }
+export const SLUGIFY_ENDPOINT_PATH = '/payload-slug/slugify' as const
 
-/** Spread into admin `handleServerFunctions` (same idea as `@klnap/payload-schedule`’s `scheduleServerFunctions`). */
-export const createSlugServerFunctions = (config: SanitizedConfig | Promise<SanitizedConfig>) =>
-  ({
-    [SLUGIFY_SERVER_FUNCTION_NAME]: createSlugifyServerFunctionHandler(config),
-  }) as const
+/** Registered by `slug()`; the admin field calls it to preview Auto slugs from a custom `slugify`. */
+export const slugifyEndpoint: Endpoint = {
+  path: SLUGIFY_ENDPOINT_PATH,
+  method: 'post',
+  handler: async (req) => {
+    try {
+      const args = (await req.json?.()) as SlugifyServerFunctionArgs
+      const slug = await handleSlugifyServerFunction(req.payload.config, args, req)
+      return Response.json({ slug })
+    } catch (error) {
+      const status = error instanceof UnauthorizedError || error instanceof Forbidden ? 403 : 400
+      return Response.json(
+        { error: error instanceof Error ? error.message : 'Bad request' },
+        { status },
+      )
+    }
+  },
+}

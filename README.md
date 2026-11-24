@@ -30,7 +30,7 @@ import { slug, slugField } from '@klnap/payload-slug'
 import { buildConfig } from 'payload'
 
 export default buildConfig({
-  plugins: [slug()], // registers admin translations (en, pl, de)
+  plugins: [slug()], // admin translations (en, pl, de) and the preview endpoint
   collections: [
     {
       slug: 'pages',
@@ -42,7 +42,7 @@ export default buildConfig({
 
 Then run `payload generate:importmap` so the admin field component is registered, and regenerate your types: the field adds `slug` and `slugMode`.
 
-`slug()` is optional; without it the admin shows English labels.
+`slug()` registers admin translations and the preview endpoint. It is optional unless you use a custom `slugify`; without it the admin shows English labels.
 
 ## Behavior
 
@@ -73,33 +73,13 @@ The field is a `row` and sets no `admin.position`; place it where you need it.
 
 ### Custom `slugify`
 
-The admin previews Auto slugs live. With a custom `slugify`, the preview calls a Payload server function, so register it in your admin layout:
-
-```tsx
-// app/(payload)/layout.tsx
-import { createSlugServerFunctions } from '@klnap/payload-slug/server'
-import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
-import config from '@payload-config'
-
-const serverFunction = async (args) => {
-  'use server'
-  return handleServerFunctions({
-    ...args,
-    config,
-    importMap,
-    serverFunctions: createSlugServerFunctions(config),
-  })
-}
-```
-
-The handler requires a signed-in user with read access to the collection. Without a custom `slugify`, no wiring is needed.
+The admin previews Auto slugs live. With a custom `slugify`, the preview calls `POST /api/payload-slug/slugify`, an endpoint that `slug()` registers for you, so the `slug()` plugin is required. The endpoint needs a signed-in user with read access to the collection. Without a custom `slugify`, nothing else is needed.
 
 ## Exports
 
 | Path | Exports |
 | --- | --- |
 | `@klnap/payload-slug` | `slugField`, `slug`, `generateSlug`, `slugFieldTranslations`, types `SlugFieldArgs`, `SlugifyFunction`, `SlugMode` |
-| `@klnap/payload-slug/server` | `createSlugServerFunctions` |
 | `@klnap/payload-slug/admin/SlugField` | Admin component (import map only) |
 
 ## Compatibility
