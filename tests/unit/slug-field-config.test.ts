@@ -10,8 +10,8 @@ describe('slugField config', () => {
     expect('name' in field && field.name).toBe('slug')
   })
 
-  it('returns a row with slug and slugMode when autoManual is on', () => {
-    const field = slugField({ source: 'title', autoManual: true })
+  it('returns a row with slug and slugMode when modeToggle is on', () => {
+    const field = slugField({ source: 'title', modeToggle: true })
     expect(field.type).toBe('row')
     const names = collectFields(field).map((f) => ('name' in f ? f.name : undefined))
     expect(names).toContain('slug')
@@ -41,7 +41,7 @@ describe('slugField config', () => {
         source: 'meta.title',
         usesCustomSlugify: true,
         slugLocalized: false,
-        autoManual: false,
+        modeToggle: false,
       },
     })
   })
