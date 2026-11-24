@@ -7,7 +7,7 @@ A slug field for [Payload CMS](https://payloadcms.com) 3. By default it is a pla
 Payload ships an experimental `slugField` that decides whether to regenerate a slug from autosave and publish heuristics. This package keeps the common case simple and the other case explicit:
 
 - Default: the slug is yours. It is generated only when empty and never overwritten afterwards.
-- `autoManual: true`: the mode is a stored field (`slugMode`), so behavior never depends on how many versions a document has. Auto follows the source on every save; Manual never changes unless the editor edits it.
+- `modeToggle: true`: the mode is a stored field (`slugMode`), so behavior never depends on how many versions a document has. Auto follows the source on every save; Manual never changes unless the editor edits it.
 - The server is authoritative. Submitted slugs are normalized with the same rules as generated ones, and input that normalizes to nothing is rejected rather than stored.
 
 If you want a slug that stabilizes after publishing, use Payload's native field instead.
@@ -40,13 +40,13 @@ export default buildConfig({
 })
 ```
 
-Then run `payload generate:importmap` so the admin field component is registered, and regenerate your types: the field adds `slug` (and `slugMode` with `autoManual`).
+Then run `payload generate:importmap` so the admin field component is registered, and regenerate your types: the field adds `slug` (and `slugMode` with `modeToggle`).
 
 `slug()` registers admin translations and the preview endpoint. It is optional unless you use a custom `slugify`; without it the admin shows English labels.
 
 ## Behavior
 
-Default (no `autoManual`):
+Default (no `modeToggle`):
 
 | Situation | Result |
 | --- | --- |
@@ -57,7 +57,7 @@ Default (no `autoManual`):
 | Slug normalizes to empty (`!!!`) | Validation error. |
 | Empty slug and empty source on create | `draft-<uuid>`, so drafts stay unique. |
 
-With `autoManual: true`, `slug` and `slugMode` are stored and the admin shows an Auto/Manual toggle:
+With `modeToggle: true`, `slug` and `slugMode` are stored and the admin shows an Auto/Manual toggle:
 
 | Mode | Result |
 | --- | --- |
@@ -77,9 +77,9 @@ Default normalization uses [`slugify`](https://www.npmjs.com/package/slugify) (`
 | `source` | required | Path of the source field from the document root, for example `title` or `meta.title`. |
 | `slugify` | `slugify` package | `({ valueToSlugify, data, req }) => string \| undefined`. Runs on the server and may be async. |
 | `localized` | `false` | Localizes `slug` (and `slugMode`). The default slugify then applies rules for the active locale. |
-| `autoManual` | `false` | Adds the persisted Auto/Manual mode described above. |
+| `modeToggle` | `false` | Adds the persisted Auto/Manual mode described above. |
 
-The field sets no `admin.position`; place it where you need it. With `autoManual` it is a `row` containing `slugMode` and `slug`.
+The field sets no `admin.position`; place it where you need it. With `modeToggle` it is a `row` containing `slugMode` and `slug`.
 
 ### Custom `slugify`
 

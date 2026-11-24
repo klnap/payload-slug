@@ -42,7 +42,7 @@ export const slugField = ({
   source,
   slugify,
   localized = false,
-  autoManual = false,
+  modeToggle = false,
 }: SlugFieldArgs): Field => {
   const usesCustomSlugify = typeof slugify === 'function'
 
@@ -55,7 +55,7 @@ export const slugField = ({
     source,
     usesCustomSlugify,
     slugLocalized: localized,
-    autoManual,
+    modeToggle,
   }
 
   const slug: Field = {
@@ -83,7 +83,7 @@ export const slugField = ({
           const originalSlug =
             typeof original?.slug === 'string' && original.slug.trim() ? original.slug : undefined
 
-          const slugMode = autoManual
+          const slugMode = modeToggle
             ? resolveSlugMode({
                 operation,
                 siblingData: siblingData as Record<string, unknown> | undefined,
@@ -91,9 +91,9 @@ export const slugField = ({
               })
             : 'manual'
 
-          // Without autoManual a submitted slug is the editor's; generation only fills a gap.
+          // Without modeToggle a submitted slug is the editor's; generation only fills a gap.
           // `undefined` means the slug was not part of the update, so the stored one stays.
-          const generate = autoManual
+          const generate = modeToggle
             ? slugMode === 'auto'
             : !hasValue && !(value === undefined && originalSlug)
 
@@ -141,7 +141,7 @@ export const slugField = ({
     },
   }
 
-  if (!autoManual) return slug
+  if (!modeToggle) return slug
 
   return {
     type: 'row',

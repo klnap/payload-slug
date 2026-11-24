@@ -20,7 +20,7 @@ beforeAll(async () => {
       {
         slug: 'pages',
         versions: { drafts: true },
-        fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title', autoManual: true })],
+        fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title', modeToggle: true })],
       },
       {
         slug: 'posts',
@@ -79,7 +79,7 @@ describe('slugField with Payload and a real database', () => {
     expect(b.slug).not.toBe(a.slug)
   })
 
-  it('without autoManual fills an empty slug and then leaves it alone', async () => {
+  it('without modeToggle fills an empty slug and then leaves it alone', async () => {
     const doc = await payload.create({ collection: 'posts', data: { title: 'First Post' } })
     expect(doc.slug).toBe('first-post')
     expect('slugMode' in doc).toBe(false)

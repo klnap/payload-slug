@@ -22,7 +22,7 @@ const slugFieldLayoutStyle = {
   minWidth: 0,
 } as const
 
-const AutoManualSlugField = ({
+const ModeToggleSlugField = ({
   source,
   usesCustomSlugify,
   slugLocalized,
@@ -186,4 +186,4 @@ const AutoManualSlugField = ({
 }
 
 export const SlugField = (props: SlugFieldProps) =>
-  props.autoManual ? <AutoManualSlugField {...props} /> : <SimpleSlugField {...props} />
+  props.modeToggle ? <ModeToggleSlugField {...props} /> : <SimpleSlugField {...props} />

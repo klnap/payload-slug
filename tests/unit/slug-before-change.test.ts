@@ -14,7 +14,7 @@ type BeforeChangeHook = (args: {
 }) => Promise<unknown>
 
 const getSlugBeforeChange = (args: Parameters<typeof slugField>[0]): BeforeChangeHook => {
-  const row = slugField({ autoManual: true, ...args })
+  const row = slugField({ modeToggle: true, ...args })
   const slug = collectFields(row).find((f) => 'name' in f && f.name === 'slug') as Field & {
     hooks?: { beforeChange?: BeforeChangeHook[] }
   }
@@ -144,8 +144,8 @@ describe('slug.beforeChange', () => {
   })
 })
 
-describe('slug.beforeChange without autoManual', () => {
-  const plain = () => getSlugBeforeChange({ source: 'title', autoManual: false })
+describe('slug.beforeChange without modeToggle', () => {
+  const plain = () => getSlugBeforeChange({ source: 'title', modeToggle: false })
 
   it('fills an empty slug from the source', async () => {
     const result = await plain()({

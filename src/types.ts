@@ -18,7 +18,7 @@ export type SlugFieldArgs = {
    * every save; Manual keeps the editor's slug. Off by default: the slug is a plain field that is
    * filled from `source` while it is empty.
    */
-  autoManual?: boolean
+  modeToggle?: boolean
 }
 
 /** Serializable props passed to the admin field component. Not part of the public API. */
@@ -27,5 +27,5 @@ export type SlugFieldClientProps = {
   usesCustomSlugify: boolean
   /** Mirrors `slugField({ localized })` — drives locale-aware default slugify in admin. */
   slugLocalized: boolean
-  autoManual: boolean
+  modeToggle: boolean
 }
