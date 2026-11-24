@@ -5,7 +5,7 @@ import { collectFields, slugFieldOutputHasLayoutAdmin } from '../field-tree.js'
 
 describe('slugField config', () => {
   it('returns a row with slug and slugMode', () => {
-    const field = slugField({ autoFrom: 'title' })
+    const field = slugField({ source: 'title' })
     expect(field.type).toBe('row')
     const names = collectFields(field).map((f) => ('name' in f ? f.name : undefined))
     expect(names).toContain('slug')
@@ -13,13 +13,13 @@ describe('slugField config', () => {
   })
 
   it('does not impose admin.position or layout metadata on any nested field', () => {
-    const field = slugField({ autoFrom: 'title', slugify: () => 'x' })
+    const field = slugField({ source: 'title', slugify: () => 'x' })
     expect(slugFieldOutputHasLayoutAdmin(field)).toBe(false)
   })
 
   it('wires custom slugify on slug field only', () => {
     const field = slugField({
-      autoFrom: 'title',
+      source: 'title',
       slugify: () => 'custom',
     })
     const slug = collectFields(field).find((f) => 'name' in f && f.name === 'slug') as Field
@@ -27,12 +27,12 @@ describe('slugField config', () => {
   })
 
   it('registers the public admin field with serializable clientProps', () => {
-    const field = slugField({ autoFrom: 'meta.title', slugify: () => 'x' })
+    const field = slugField({ source: 'meta.title', slugify: () => 'x' })
     const slug = collectFields(field).find((f) => 'name' in f && f.name === 'slug') as Field
     expect(slug.admin?.components?.Field).toEqual({
       path: '@klnap/payload-slug/admin/SlugField',
       clientProps: {
-        autoFrom: 'meta.title',
+        source: 'meta.title',
         usesCustomSlugify: true,
         slugLocalized: false,
       },
@@ -40,7 +40,7 @@ describe('slugField config', () => {
   })
 
   it('passes slugLocalized when slug field is localized', () => {
-    const field = slugField({ autoFrom: 'title', localized: true })
+    const field = slugField({ source: 'title', localized: true })
     const slug = collectFields(field).find((f) => 'name' in f && f.name === 'slug') as Field
     const components = slug.admin?.components?.Field as {
       clientProps?: Record<string, unknown>

@@ -32,7 +32,7 @@ const slugFieldLayoutStyle = {
 } as const
 
 export const SlugField = ({
-  autoFrom,
+  source,
   usesCustomSlugify,
   slugLocalized,
   field,
@@ -63,7 +63,7 @@ export const SlugField = ({
   const liveSyncGenerationRef = useRef(0)
 
   const watchedSourceValue = useFormFields(([fields]) =>
-    readFormFieldValue(fields as Record<string, { value?: unknown }>, autoFrom),
+    readFormFieldValue(fields as Record<string, { value?: unknown }>, source),
   )
 
   const readOnlyFromProps = field.admin?.readOnly === true
@@ -85,7 +85,7 @@ export const SlugField = ({
   }, [slugMode, slugValue])
 
   const generateFromSource = useCallback(async (): Promise<string | undefined> => {
-    const valueToSlugify = getDataByPath(autoFrom)
+    const valueToSlugify = getDataByPath(source)
 
     if (usesCustomSlugify) {
       if (!collectionSlug || !schemaPath) {
@@ -111,7 +111,7 @@ export const SlugField = ({
       locale: localeCode,
     })
   }, [
-    autoFrom,
+    source,
     collectionSlug,
     getData,
     getDataByPath,
@@ -159,7 +159,7 @@ export const SlugField = ({
     return () => {
       window.clearTimeout(timeout)
     }
-  }, [applyGeneratedSlug, autoFrom, formDisabled, isAuto, watchedSourceValue])
+  }, [applyGeneratedSlug, source, formDisabled, isAuto, watchedSourceValue])
 
   const toggleMode = useCallback(async () => {
     if (formDisabled) return

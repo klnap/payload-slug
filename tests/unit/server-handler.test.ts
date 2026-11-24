@@ -46,7 +46,7 @@ describe('handleSlugifyServerFunction', () => {
 
   it('invokes configured custom slugify for schema path', async () => {
     const row = slugField({
-      autoFrom: 'title',
+      source: 'title',
       slugify: ({ valueToSlugify }) => `custom-${String(valueToSlugify)}`,
     })
     const slugFieldConfig = collectFields(row).find(
@@ -84,7 +84,7 @@ describe('handleSlugifyServerFunction', () => {
   })
 
   it('generates a default slug using the request locale', async () => {
-    const row = slugField({ autoFrom: 'title', localized: true })
+    const row = slugField({ source: 'title', localized: true })
     const result = await handleSlugifyServerFunction(
       mockConfig,
       {
@@ -130,7 +130,7 @@ describe('handleSlugifyServerFunction', () => {
   })
 
   it('resolves promised config in the server function handler', async () => {
-    const row = slugField({ autoFrom: 'title' })
+    const row = slugField({ source: 'title' })
     const handler = createSlugifyServerFunctionHandler(Promise.resolve(mockConfig))
     const result = await handler({
       collection: 'pages',

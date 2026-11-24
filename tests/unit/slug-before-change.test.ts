@@ -31,7 +31,7 @@ const req = {
 
 describe('slug.beforeChange', () => {
   it('returns value unchanged in manual mode', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'title' })
+    const beforeChange = getSlugBeforeChange({ source: 'title' })
     const result = await beforeChange({
       value: 'my-custom-slug',
       operation: 'update',
@@ -43,7 +43,7 @@ describe('slug.beforeChange', () => {
   })
 
   it('slugifies a manual value', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'title' })
+    const beforeChange = getSlugBeforeChange({ source: 'title' })
     const result = await beforeChange({
       value: 'Hello World',
       operation: 'update',
@@ -55,7 +55,7 @@ describe('slug.beforeChange', () => {
   })
 
   it('rejects a manual value that slugifies to empty instead of storing it raw', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'title' })
+    const beforeChange = getSlugBeforeChange({ source: 'title' })
     await expect(
       beforeChange({
         value: '../..',
@@ -67,8 +67,8 @@ describe('slug.beforeChange', () => {
     ).rejects.toThrow(ValidationError)
   })
 
-  it('generates slug from autoFrom on create', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'title' })
+  it('generates slug from source on create', async () => {
+    const beforeChange = getSlugBeforeChange({ source: 'title' })
     const result = await beforeChange({
       value: '',
       operation: 'create',
@@ -80,7 +80,7 @@ describe('slug.beforeChange', () => {
   })
 
   it('uses a draft placeholder on create when auto slug cannot be generated yet', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'title' })
+    const beforeChange = getSlugBeforeChange({ source: 'title' })
     const result = await beforeChange({
       value: '',
       operation: 'create',
@@ -92,7 +92,7 @@ describe('slug.beforeChange', () => {
   })
 
   it('keeps a submitted slug on create when auto source is unavailable', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'title' })
+    const beforeChange = getSlugBeforeChange({ source: 'title' })
     const result = await beforeChange({
       value: 'submitted-slug',
       operation: 'create',
@@ -104,7 +104,7 @@ describe('slug.beforeChange', () => {
   })
 
   it('preserves slug on update when source cannot be resolved', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'title' })
+    const beforeChange = getSlugBeforeChange({ source: 'title' })
     const result = await beforeChange({
       value: 'existing-slug',
       operation: 'update',
@@ -118,7 +118,7 @@ describe('slug.beforeChange', () => {
 
   it('uses custom slugify when configured', async () => {
     const beforeChange = getSlugBeforeChange({
-      autoFrom: 'title',
+      source: 'title',
       slugify: ({ valueToSlugify }) => `x-${String(valueToSlugify)}`,
     })
     const result = await beforeChange({
@@ -131,8 +131,8 @@ describe('slug.beforeChange', () => {
     expect(result).toBe('x-Hi')
   })
 
-  it('resolves nested autoFrom from document root', async () => {
-    const beforeChange = getSlugBeforeChange({ autoFrom: 'meta.title' })
+  it('resolves nested source from document root', async () => {
+    const beforeChange = getSlugBeforeChange({ source: 'meta.title' })
     const result = await beforeChange({
       value: '',
       operation: 'create',
