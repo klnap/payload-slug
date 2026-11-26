@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+### Patch Changes
+
+- b56dc63: Cancel pending automatic slug updates when the editor changes the slug or disables the field.
+
 ## [0.1.1] - 2026-11-25
 
 Released through GitHub Actions with npm provenance. The code is unchanged from 0.1.0.
