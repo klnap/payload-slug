@@ -1,113 +1,152 @@
-# @klnap/payload-slug
+# `@klnap/payload-slug`
 
-A slug field for [Payload CMS](https://payloadcms.com) 3. By default it is a plain, unique `slug` field that fills itself from another field while it is empty, in the admin as you type and on the server when the slug is missing. Optionally it adds a persisted **Auto/Manual** mode for editors who want a slug that always follows its source.
+A Payload CMS field that generates URL-friendly slugs from top-level or nested source paths and enforces uniqueness, with optional persisted Auto/Manual control.
 
-## Why
+```ts
+import type { CollectionConfig } from "payload";
+import { slugField } from "@klnap/payload-slug";
 
-Payload ships an experimental `slugField` that decides whether to regenerate a slug from autosave and publish heuristics. This package keeps the common case simple and the other case explicit:
+export const Pages: CollectionConfig = {
+  slug: "pages",
+  fields: [{ name: "title", type: "text", required: true }, slugField({ source: "title" })],
+};
+```
 
-- Default: the slug is yours. It is generated only when empty and never overwritten afterwards.
-- `modeToggle: true`: the mode is a stored field (`slugMode`), so behavior never depends on how many versions a document has. Auto follows the source on every save; Manual never changes unless the editor edits it.
-- The server is authoritative. Submitted slugs are normalized with the same rules as generated ones, and input that normalizes to nothing is rejected rather than stored.
+Payload generates the admin import map at startup and during hot reload. Run `payload generate:importmap` manually when needed.
 
-If you want a slug that stabilizes after publishing, use Payload's native field instead.
+## Why?
 
-### Live in the admin
+Payload includes a built-in `slugField` with a `generateSlug` checkbox and generation rules tied to create, update, autosave, and publish state. Its `useAsSlug` option selects a top-level field.
 
-The slug is computed client-side, so you see its state in the input as you type the source, before saving. With the default slugify there is no server round trip; a custom `slugify` runs through the `slug()` endpoint. A generate icon inside the input, on the right, fills the slug from the source on click. Payload's native `slugField` is locked by default and generates through a server call when you click Generate or save, so the slug does not follow the source while you type.
+This package offers a different contract: the default slug stays stable once set, `source` can point to nested fields, and `modeToggle` adds a persisted Auto/Manual choice. Use Payload's built-in field when its lifecycle fits your content. Use this package when its source paths or save behavior fit better.
 
-## Install
+## Features
 
-```sh
+- Generate a slug in the admin as the source changes, then normalize it again on the server.
+- Keep an existing slug stable by default, or opt into a persisted Auto/Manual mode.
+- Read source values from nested document objects, such as `hero.title`.
+- Use a synchronous or asynchronous custom slugifier for server saves and admin previews.
+- Localize the slug and use locale-aware rules in the default slugifier.
+- Enforce required, indexed, unique slug values through Payload field configuration.
+
+## Installation
+
+```bash
 bun add @klnap/payload-slug
 ```
 
-or
-
-```sh
+```bash
 npm install @klnap/payload-slug
 ```
 
-## Quick start
+The Payload application must already provide the peer dependencies listed under [Compatibility](#compatibility).
+
+## Usage
+
+### Nested source fields
+
+`source` is a dot-separated path from the document root. For example, place the slug beside a named Payload group and point it to the group's title:
 
 ```ts
-// payload.config.ts
-import { slug, slugField } from "@klnap/payload-slug";
-import { buildConfig } from "payload";
+{
+  name: "hero",
+  type: "group",
+  fields: [{ name: "title", type: "text" }],
+},
+slugField({ source: "hero.title" }),
+```
 
-export default buildConfig({
-  plugins: [slug()], // admin translations (en, pl, de) and the preview endpoint
-  collections: [
-    {
-      slug: "pages",
-      fields: [{ name: "title", type: "text" }, slugField({ source: "title" })],
-    },
-  ],
+### Persisted Auto/Manual mode
+
+Enable `modeToggle` when editors need to choose whether the slug follows the source on every save:
+
+```ts
+slugField({ source: "title", modeToggle: true });
+```
+
+The field stores the choice in a hidden `slugMode` field. New documents default to `"auto"`. Auto mode regenerates the slug on every save, including published documents; Manual mode keeps the editor's slug and normalizes it on save. Auto mode can change a published URL when its source changes, so add your own access or hook rule if that is not acceptable.
+
+### Custom slugification
+
+Provide a custom `slugify` function to use application-specific rules. Add `slug()` to `buildConfig` to register translations and the authenticated admin-preview endpoint:
+
+```ts
+import { generateSlug, slugField } from "@klnap/payload-slug";
+
+export const postSlugField = slugField({
+  source: "title",
+  slugify: ({ valueToSlugify }) => {
+    if (typeof valueToSlugify !== "string") return undefined;
+    const normalized = generateSlug(valueToSlugify);
+    return normalized ? `post-${normalized}` : undefined;
+  },
 });
 ```
 
-Then run `payload generate:importmap` so the admin field component is registered, and regenerate your types: the field adds `slug` (and `slugMode` with `modeToggle`).
+Import `slug` from the package, then add this property to your existing `buildConfig` to register translations and the admin-preview endpoint:
 
-`slug()` registers admin translations and the preview endpoint. It is optional unless you use a custom `slugify`; without it the admin shows English labels.
+```ts
+plugins: [slug()],
+```
 
-## Behavior
+`slugify` runs on the server during saves. With `slug()`, the admin preview calls the same function through a Payload endpoint. The preview requires a signed-in user with read access to the collection. The `data` argument comes from the current form, so treat it as user-controlled input.
 
-Default (no `modeToggle`):
+### Localized slugs
 
-| Situation                             | Result                                                                    |
-| ------------------------------------- | ------------------------------------------------------------------------- |
-| Slug empty in the admin               | Follows `source` as you type, until you type a slug yourself.             |
-| Generate icon clicked                 | Replaces the slug with one generated from `source`.                       |
-| Create or update with an empty slug   | Generated from `source` on the server.                                    |
-| Slug submitted                        | Normalized (`My Slug` becomes `my-slug`). Source changes do not touch it. |
-| Update that does not include the slug | The stored slug is kept.                                                  |
-| Slug normalizes to empty (`!!!`)      | Validation error.                                                         |
-| Empty slug and empty source on create | `draft-<uuid>`, so drafts stay unique.                                    |
+Set `localized: true` to localize the `slug` field and, when enabled, `slugMode`. The default slugifier uses the active request locale for localized fields:
 
-With `modeToggle: true`, `slug` and `slugMode` are stored and the admin shows an Auto/Manual toggle:
+```ts
+slugField({ source: "title", localized: true });
+```
 
-| Mode   | Result                                                                                                                                                                               |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Auto   | Generated from `source` on every save, including on published documents. Add an access or hook rule if published URLs must not move. Empty source on update keeps the existing slug. |
-| Manual | The submitted slug is normalized and never overwritten by the source. The generate icon fills it from `source` on demand.                                                            |
+## Configuration
 
-A duplicate slug fails on the database unique constraint. No numeric suffix is appended.
+`slugField(options)` returns a required, indexed, unique text field named `slug`. With `modeToggle: true`, it returns a row containing `slugMode` and `slug`.
 
-Default normalization uses [`slugify`](https://www.npmjs.com/package/slugify) (`lower`, `strict`). Characters without a transliteration, such as CJK, are dropped. Pass a custom `slugify` for those scripts.
+| Option       | Type              | Default            | Behavior                                                                                                |
+| ------------ | ----------------- | ------------------ | ------------------------------------------------------------------------------------------------------- |
+| `source`     | `string`          | Required           | Absolute path from the document root. Dot-separated object paths are supported; array traversal is not. |
+| `slugify`    | `SlugifyFunction` | Built-in slugifier | Custom synchronous or asynchronous slug generation for saves and admin previews.                        |
+| `localized`  | `boolean`         | `false`            | Localizes `slug` and, when present, `slugMode`. The default slugifier uses the active locale.           |
+| `modeToggle` | `boolean`         | `false`            | Adds the persisted Auto/Manual mode described above.                                                    |
 
-## Options
+Without `modeToggle`, the admin follows the source while the slug is empty or still holds a value generated by the component. Once an editor enters a slug, source changes do not replace it. On save, submitted slugs are normalized; an update that omits the slug keeps the stored value. If a new document has no usable source yet, the server assigns a temporary `draft-<id>` slug, using `data.id` when available or a random UUID otherwise.
 
-`slugField(options)`:
+The default slugifier uses [`slugify`](https://github.com/simov/slugify) with lowercase, strict, trimmed output. It does not add a collision suffix: duplicate values fail the unique constraint. A manually submitted slug that normalizes to an empty string is rejected.
 
-| Option       | Default           | Description                                                                                      |
-| ------------ | ----------------- | ------------------------------------------------------------------------------------------------ |
-| `source`     | required          | Path of the source field from the document root, for example `title` or `meta.title`.            |
-| `slugify`    | `slugify` package | `({ valueToSlugify, data, req }) => string \| undefined`. Runs on the server and may be async.   |
-| `localized`  | `false`           | Localizes `slug` (and `slugMode`). The default slugify then applies rules for the active locale. |
-| `modeToggle` | `false`           | Adds the persisted Auto/Manual mode described above.                                             |
+### Public API
 
-The field sets no `admin.position`; place it where you need it. With `modeToggle` it is a `row` containing `slugMode` and `slug`.
+The package root exports:
 
-### Custom `slugify`
+| Export                                                                | Purpose                                                                     |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `slugField(options)`                                                  | Payload field factory.                                                      |
+| `slug()`                                                              | Plugin that registers translations and the custom-slugify preview endpoint. |
+| `generateSlug(source, options?)`                                      | Default slugifier; accepts an optional `{ locale?: string }` option.        |
+| `slugFieldTranslations`                                               | English, Polish, and German field translations.                             |
+| `GenerateSlugOptions`, `SlugFieldArgs`, `SlugifyFunction`, `SlugMode` | Public TypeScript types.                                                    |
 
-The admin previews generated slugs live. With a custom `slugify`, the preview calls `POST /api/payload-slug/slugify`, an endpoint that `slug()` registers for you, so the `slug()` plugin is required. The endpoint needs a signed-in user with read access to the collection. Without a custom `slugify`, nothing else is needed.
+`@klnap/payload-slug/admin/SlugField` is the admin field export used by Payload's import map. Applications should configure `slugField()` rather than importing this component directly.
 
-## Exports
-
-| Path                                  | Exports                                                                                                            |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `@klnap/payload-slug`                 | `slugField`, `slug`, `generateSlug`, `slugFieldTranslations`, types `SlugFieldArgs`, `SlugifyFunction`, `SlugMode` |
-| `@klnap/payload-slug/admin/SlugField` | Admin component (import map only)                                                                                  |
+`SlugifyFunction` receives `{ valueToSlugify, data, req }`, where `valueToSlugify` is `unknown`, `data` is the current document data, and `req` is a Payload request. It returns `string | undefined` or a promise of either value.
 
 ## Compatibility
 
-Tested against `payload` and `@payloadcms/ui` 3.94.1 with React 19.3 on Node 26. The peer range is `>=3.94.1 <4`; other 3.x versions are untested. ESM only.
+| Requirement                 | Supported range                                   | Verified                            |
+| --------------------------- | ------------------------------------------------- | ----------------------------------- |
+| `payload`, `@payloadcms/ui` | `>=3.94.1 <4`                                     | `3.94.1` and `3.94.2`               |
+| `react`, `react-dom`        | `~19.0.9 \|\| ~19.1.10 \|\| ~19.2.9 \|\| ^19.3.1` | `19.3.1`                            |
+| Node.js                     | `^22.23.5 \|\| ^24.22.3 \|\| >=26.13.1`           | `22.23.5`, `24.22.3`, and `26.13.1` |
 
-## Limitations
+The package is ESM-only. The admin field imports CSS, so the application bundler must support CSS imports from dependencies. Custom slugifier previews support collections, not globals. Source paths do not traverse arrays.
 
-- Custom `slugify` preview supports collections, not globals.
-- No collision suffixes.
-- The admin component imports a small CSS file, so your bundler must handle CSS from `node_modules` (Next.js does).
+## Documentation
+
+- [Payload text and slug fields](https://payloadcms.com/docs/fields/text)
+- [Payload field hooks](https://payloadcms.com/docs/hooks/fields)
+- [Payload custom components and import maps](https://payloadcms.com/docs/custom-components/overview#component-paths)
+- [Security policy](https://github.com/klnap/payload-slug/blob/main/SECURITY.md)
+- [Changelog](./CHANGELOG.md)
 
 ## License
 
