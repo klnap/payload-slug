@@ -1,8 +1,9 @@
 node_modules/
-/graphify-out/
 dist/
 coverage/
 *.tsbuildinfo
+*.log
 *.tgz
-.env
-.env.*
+.env*
+/graphify-out/
+.DS_Store
