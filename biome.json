@@ -1,10 +1,40 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
-  "files": { "includes": ["**", "!**/*.md", "!.github"] },
-  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
-  "javascript": {
-    "formatter": { "quoteStyle": "single", "jsxQuoteStyle": "single", "semicolons": "asNeeded" }
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
   },
-  "linter": { "rules": { "style": { "noDefaultExport": "off" } } }
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/coverage",
+      "!**/bun.lock",
+      "!**/.changeset/*.md"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noDefaultExport": "off"
+      }
+    }
+  }
 }
