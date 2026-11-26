@@ -10,4 +10,4 @@ Report vulnerabilities privately through [GitHub private vulnerability reporting
 
 ## Scope
 
-The package runs inside your Payload server and admin. Relevant reports include slug handling that bypasses access control, the server function exposing data, and release or supply-chain weaknesses. The package has a GitHub Actions npm Trusted Publisher, and the `0.1.1` publish produced provenance. The new Changesets release path still needs a successful OIDC run.
+The package runs inside your Payload server and admin. Relevant reports include slug handling that bypasses access control, the server function exposing data, and release or supply-chain weaknesses. The release workflow uses npm Trusted Publishing and publishes provenance. Report missing or invalid provenance as a supply-chain issue.
