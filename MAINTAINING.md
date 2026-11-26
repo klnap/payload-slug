@@ -1,63 +1,103 @@
 # Maintaining
 
-This repository is the reference layout for the other `@klnap` Payload packages. Items marked **Required** apply to every package; the rest are decisions specific to this one.
+Shared package infrastructure follows the read-only reference at
+[`klnap/npm-package-template`](https://github.com/klnap/npm-package-template). This package keeps its
+Payload-specific exports, CSS asset, integration tests, and supported Node.js floors.
 
-## Repository layout (required)
+## Development and quality gates
 
-- `src/` (ESM TypeScript, relative `.js` imports), `tests/`, `scripts/`, `.github/`
-- `package.json`, `bun.lock` (committed), `tsconfig.json`, `tsconfig.build.json`, `biome.json`, `knip.json`
-- `README.md`, `CHANGELOG.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `MAINTAINING.md`
-- No monorepo references: no `workspace:` ranges, path aliases, shared configs, or private packages. Build with plain `tsc`; no bundler unless a real consumer needs one.
+Use Bun `1.4.5` and the Node.js range declared in `package.json`.
 
-## Package metadata (required)
+```sh
+bun install --frozen-lockfile
+bun run check
+npm pack --ignore-scripts
+scripts/consumer-smoke.sh klnap-payload-slug-<version>.tgz
+```
 
-- Name `@klnap/<name>`, `license`, `author`, `repository` (`git+https://...git`), `homepage`, `bugs`, keywords, `publishConfig.access: public`.
-- `type: module`, explicit `exports` with `types` first, `files` allowlist (`dist`, `README.md`, `CHANGELOG.md`, `LICENSE`).
-- `sideEffects` only when true (this package: CSS).
-- Peers state the Payload range actually tested. Dev dependencies pin exact versions.
-- Version stays `0.1.0` until the first publish.
+`bun run check` runs formatting, lint, typechecking, Knip, unit and integration tests, the build,
+publint, and Are the Types Wrong. The packed consumer test checks the published file allowlist,
+TypeScript inference and errors, ESM imports, the admin export, and a real Payload/SQLite operation
+on the minimum and latest supported Payload 3.x versions. CI also runs the packed runtime smoke test
+on each declared Node.js minimum.
 
-## Quality gates (required)
+The project typecheck sets `skipLibCheck` because Payload 3.94.1 transitively includes incompatible
+Next.js and Bun ambient declarations and references the untyped `minimist` package. The isolated
+consumer fixture still checks this package's declarations and public API.
 
-`bun run lint`, `typecheck`, `knip`, `test`, `build`, `check:package` (publint + Are The Types Wrong), then the tarball smoke test (`scripts/consumer-smoke.sh`): install the packed tarball into an empty project with real Payload and run it. At least one test runs Payload against a real database.
+## Package contract
 
-## CI and security (required)
+- Preserve the package name, release history, ESM-only exports, CSS side effect, Payload peers, and
+  actual tested Node.js range.
+- `dist`, `README.md`, `CHANGELOG.md`, and `LICENSE` are the published file allowlist.
+- Keep the exact npm registry in `publishConfig`; do not add workspace or local path dependencies.
+- Build output includes JavaScript, declarations, source maps, and the admin stylesheet.
 
-- Actions pinned to commit SHAs with a version comment. Top-level `permissions: {}`; each job requests only what it needs.
-- `persist-credentials: false`; no caching in release jobs; `bun install --frozen-lockfile`.
-- `zizmor` and `bun audit` run in CI. Dependabot covers `github-actions` and `bun`. Validate workflows with `actionlint`.
-- Enable secret scanning, push protection, Dependabot alerts, private vulnerability reporting and CodeQL default setup.
+## Changesets release lifecycle
 
-## Release (required)
+Add a changeset for consumer-visible changes. Do not add one for repository-only maintenance. Use
+patch for compatible changes, minor for breaking changes before `1.0.0`, and major from `1.0.0`.
 
-1. Update `package.json` version and `CHANGELOG.md` (`## [x.y.z] - YYYY-MM-DD`) in a `chore: release x.y.z` commit on `main`.
-2. Push a `vX.Y.Z` tag. `release.yml` then runs three jobs:
-   - `validate` (read-only): tag equals version, commit is on `main`, all gates, packs the tarball, records its SHA-256, smoke-tests that tarball.
-   - `publish` (`environment: npm`, only job with `id-token: write`): checks the SHA-256, then `npm publish <tarball> --provenance`. It skips a version that already exists, so re-running a failed release cannot overwrite it.
-   - `github-release`: compares the tarball with npm's `dist.integrity`, then creates the GitHub Release from the changelog.
-3. Verify independently: `npm view @klnap/<name>@x.y.z dist.integrity`, `npm audit signatures` in a fresh install, and the provenance badge on npmjs.com.
+```text
+Pull request and CI
+→ squash merge to main
+→ automated Changesets Release PR
+→ maintainer approves its workflow run and merges it
+→ build, pack, and verify the tarball
+→ npm Trusted Publishing
+→ vX.Y.Z tag and GitHub Release
+```
 
-Recover a failed release by re-running failed jobs. Never move or reuse a published tag.
+The release workflow uses Changesets' `select-mode`, `version`, `pack`, and `publish` actions. The
+version job opens the Release PR with a job-scoped `GITHUB_TOKEN`. The unprivileged pack job runs
+`bun run check`, packs once, and verifies the publish-plan integrity, package identity, source commit,
+file allowlist, TypeScript consumer, and Payload runtime. The publish job receives npm OIDC
+permission and publishes that same tarball without rebuilding it. Changesets creates the version
+tag; the workflow verifies the tag points to the packed source commit before creating the GitHub
+Release.
 
-## npm Trusted Publishing bootstrap (required)
+Release runs serialize without canceling an active publication. Do not publish a new version for
+repository-only changes or move an existing tag.
 
-`npm trust` needs an existing package and an account with 2FA. Trusted publisher fields: repository `klnap/<name>`, workflow `release.yml`, environment `npm`, **allow `npm publish`**. Requires npm `>=11.15` and Node `>=22.14`; Node 24 ships a suitable npm.
+### Recovering a partial release
 
-1. `npm login` (interactive, 2FA).
-2. Create the package without publishing a public version: `npm stage publish` from the packed tarball creates a `0.0.0-stage` placeholder and holds the real version for approval.
-3. `npm trust github @klnap/<name> --repo klnap/<name> --file release.yml --env npm --allow-publish`
-4. Reject the staged version on npmjs.com (Staged Packages tab), then push the release tag so CI publishes it with provenance.
-5. After one successful OIDC publish: revoke automation tokens and, on the package settings page, require 2FA and disallow tokens.
+- Build or verification failure: fix the cause, then rerun the workflow on `main`.
+- OIDC failure: verify the npm Trusted Publisher and `npm` environment bindings, then rerun.
+- An npm version already exists: verify its integrity and provenance; never overwrite it.
+- npm succeeds but tag or GitHub Release creation fails: verify the npm package first. Compare the
+  tag target with the source SHA from the pack job. Do not move an existing tag. Create only missing
+  release metadata after confirming the published version came from that commit.
 
-Do not report Trusted Publishing as verified before a CI publish has succeeded.
+After a successful release, verify `npm view @klnap/payload-slug@<version> dist.integrity` and the
+provenance on npm. Do not claim Trusted Publishing works until a successful OIDC publication proves
+it.
 
-## GitHub settings (required)
+## npm Trusted Publishing
 
-Public repo, default branch `main`, squash/rebase merges only, delete branch on merge. Changes reach `main` through pull requests, including release commits. Ruleset on `main`: required `verify` and `security` checks, no force-push, no deletion, no required approvals (solo maintainer). Ruleset on `v*` tags: no update or deletion. Environment `npm`, limited to `v*` tags.
+Configure npm with repository `klnap/payload-slug`, workflow `.github/workflows/release.yml`, and
+environment `npm`. Allow direct `npm publish`; this workflow does not use staged publishing or
+`npm dist-tag`. No `NPM_TOKEN` or other long-lived publication credential belongs in GitHub.
 
-## Extracting from a monorepo (required)
+The `npm` environment allows deployments only from `main`. Keep OIDC permission scoped to the
+`publish` job.
 
-1. Inventory monorepo coupling and client references (grep for the client name; it never appears in a public repo).
-2. Start a clean history; never publish monorepo history.
-3. Audit the public API against current Payload behavior; delete code the package does not need.
-4. Publish and verify the registry package, then switch the consumer to the exact registry version, refresh the lockfile, run the consumer's checks, and only then delete the workspace copy.
+## GitHub and dependency settings
+
+Repository settings are external to this checkout. The active `main` ruleset requires pull requests,
+strict `verify` and `security` checks, resolved review conversations, and linear history. It allows
+no required approvals for the solo maintainer and blocks branch deletion and force-pushes. The
+active `v*` tag ruleset blocks updates and deletion.
+
+GitHub Actions keeps read-only default token permissions and can create the Changesets Release PR.
+Full-SHA action pinning, secret-scanning push protection, Dependabot alerts, private vulnerability
+reporting, CodeQL, and immutable releases are enabled. Renovate applies `renovate.json`; it delays
+ordinary updates by three days, pins action digests, and leaves security and runtime dependency
+updates for review.
+
+The package also retains its `security` required check, which runs `bun audit` and zizmor. Keep this
+check until the repository's required status checks are deliberately updated.
+
+## Extraction history
+
+This repository is standalone. Do not restore monorepo workspace references, local aliases, private
+package dependencies, or host-repository assumptions.

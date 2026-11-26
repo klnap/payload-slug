@@ -1,12 +1,12 @@
-import { expect, it } from 'bun:test'
+import { expect, it } from "bun:test";
 
-import * as root from '../src/exports/index.js'
+import * as root from "../src/exports/index.js";
 
-it('root entry exposes exactly the documented runtime API', () => {
+it("root entry exposes exactly the documented runtime API", () => {
   expect(Object.keys(root).sort()).toEqual([
-    'generateSlug',
-    'slug',
-    'slugField',
-    'slugFieldTranslations',
-  ])
-})
+    "generateSlug",
+    "slug",
+    "slugField",
+    "slugFieldTranslations",
+  ]);
+});

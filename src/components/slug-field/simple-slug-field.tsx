@@ -1,13 +1,13 @@
-'use client'
+"use client";
 
-import { FieldLabel, TextInput, useField, useFormFields } from '@payloadcms/ui'
-import { type ChangeEvent, useEffect, useRef } from 'react'
-import { GenerateButton } from './generate-button.js'
-import { readFormFieldValue } from './read-form-field-value.js'
-import type { SlugFieldProps } from './slug-field.js'
-import { useGenerateFromSource } from './use-generate-from-source.js'
+import { FieldLabel, TextInput, useField, useFormFields } from "@payloadcms/ui";
+import { type ChangeEvent, useEffect, useRef } from "react";
+import { GenerateButton } from "./generate-button.js";
+import { readFormFieldValue } from "./read-form-field-value.js";
+import type { SlugFieldProps } from "./slug-field.js";
+import { useGenerateFromSource } from "./use-generate-from-source.js";
 
-import '../../styles/slug-field.css'
+import "../../styles/slug-field.css";
 
 /**
  * Plain slug input. While it is empty (or still holds the value this component generated and the
@@ -21,39 +21,42 @@ export const SimpleSlugField = ({
   path,
   schemaPath,
 }: SlugFieldProps) => {
-  const slugPath = path || field.name
-  const { value, setValue, disabled, showError } = useField<string>({ path: slugPath })
+  const slugPath = path || field.name;
+  const { value, setValue, disabled, showError } = useField<string>({ path: slugPath });
   const generateFromSource = useGenerateFromSource({
     source,
     usesCustomSlugify,
     slugLocalized,
     fieldLocalized: field.localized,
     schemaPath,
-  })
+  });
   const watchedSource = useFormFields(([fields]) =>
     readFormFieldValue(fields as Record<string, { value?: unknown }>, source),
-  )
+  );
 
-  const current = typeof value === 'string' ? value : ''
-  const lastGeneratedRef = useRef<string | null>(null)
-  const formDisabled = disabled || field.admin?.readOnly === true
+  const current = typeof value === "string" ? value : "";
+  const lastGeneratedRef = useRef<string | null>(null);
+  const formDisabled = disabled || field.admin?.readOnly === true;
 
   useEffect(() => {
-    if (formDisabled || (current !== '' && current !== lastGeneratedRef.current)) return
+    // Reading the subscribed value makes source changes trigger the effect and cancel stale work.
+    void watchedSource;
+    if (formDisabled || (current !== "" && current !== lastGeneratedRef.current)) return;
+    if (current === lastGeneratedRef.current) return;
 
-    let cancelled = false
+    let cancelled = false;
     const timeout = window.setTimeout(async () => {
-      const next = (await generateFromSource()) ?? ''
-      if (cancelled || next === current) return
-      lastGeneratedRef.current = next
-      setValue(next)
-    }, 150)
+      const next = (await generateFromSource()) ?? "";
+      if (cancelled || next === current) return;
+      lastGeneratedRef.current = next;
+      setValue(next);
+    }, 150);
 
     return () => {
-      cancelled = true
-      window.clearTimeout(timeout)
-    }
-  }, [watchedSource])
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [current, formDisabled, generateFromSource, setValue, watchedSource]);
 
   return (
     <TextInput
@@ -61,14 +64,14 @@ export const SimpleSlugField = ({
         formDisabled ? undefined : (
           <GenerateButton
             onGenerate={async () => {
-              const next = (await generateFromSource()) ?? ''
-              lastGeneratedRef.current = next
-              setValue(next)
+              const next = (await generateFromSource()) ?? "";
+              lastGeneratedRef.current = next;
+              setValue(next);
             }}
           />
         )
       }
-      className='slug-field'
+      className="slug-field"
       Label={
         <FieldLabel
           label={field.label || field.name}
@@ -85,5 +88,5 @@ export const SimpleSlugField = ({
       showError={showError}
       value={current}
     />
-  )
-}
+  );
+};

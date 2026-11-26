@@ -32,18 +32,18 @@ npm install @klnap/payload-slug
 
 ```ts
 // payload.config.ts
-import { slug, slugField } from '@klnap/payload-slug'
-import { buildConfig } from 'payload'
+import { slug, slugField } from "@klnap/payload-slug";
+import { buildConfig } from "payload";
 
 export default buildConfig({
   plugins: [slug()], // admin translations (en, pl, de) and the preview endpoint
   collections: [
     {
-      slug: 'pages',
-      fields: [{ name: 'title', type: 'text' }, slugField({ source: 'title' })],
+      slug: "pages",
+      fields: [{ name: "title", type: "text" }, slugField({ source: "title" })],
     },
   ],
-})
+});
 ```
 
 Then run `payload generate:importmap` so the admin field component is registered, and regenerate your types: the field adds `slug` (and `slugMode` with `modeToggle`).
@@ -54,22 +54,22 @@ Then run `payload generate:importmap` so the admin field component is registered
 
 Default (no `modeToggle`):
 
-| Situation | Result |
-| --- | --- |
-| Slug empty in the admin | Follows `source` as you type, until you type a slug yourself. |
-| Generate icon clicked | Replaces the slug with one generated from `source`. |
-| Create or update with an empty slug | Generated from `source` on the server. |
-| Slug submitted | Normalized (`My Slug` becomes `my-slug`). Source changes do not touch it. |
-| Update that does not include the slug | The stored slug is kept. |
-| Slug normalizes to empty (`!!!`) | Validation error. |
-| Empty slug and empty source on create | `draft-<uuid>`, so drafts stay unique. |
+| Situation                             | Result                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------- |
+| Slug empty in the admin               | Follows `source` as you type, until you type a slug yourself.             |
+| Generate icon clicked                 | Replaces the slug with one generated from `source`.                       |
+| Create or update with an empty slug   | Generated from `source` on the server.                                    |
+| Slug submitted                        | Normalized (`My Slug` becomes `my-slug`). Source changes do not touch it. |
+| Update that does not include the slug | The stored slug is kept.                                                  |
+| Slug normalizes to empty (`!!!`)      | Validation error.                                                         |
+| Empty slug and empty source on create | `draft-<uuid>`, so drafts stay unique.                                    |
 
 With `modeToggle: true`, `slug` and `slugMode` are stored and the admin shows an Auto/Manual toggle:
 
-| Mode | Result |
-| --- | --- |
-| Auto | Generated from `source` on every save, including on published documents. Add an access or hook rule if published URLs must not move. Empty source on update keeps the existing slug. |
-| Manual | The submitted slug is normalized and never overwritten by the source. The generate icon fills it from `source` on demand. |
+| Mode   | Result                                                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Auto   | Generated from `source` on every save, including on published documents. Add an access or hook rule if published URLs must not move. Empty source on update keeps the existing slug. |
+| Manual | The submitted slug is normalized and never overwritten by the source. The generate icon fills it from `source` on demand.                                                            |
 
 A duplicate slug fails on the database unique constraint. No numeric suffix is appended.
 
@@ -79,12 +79,12 @@ Default normalization uses [`slugify`](https://www.npmjs.com/package/slugify) (`
 
 `slugField(options)`:
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `source` | required | Path of the source field from the document root, for example `title` or `meta.title`. |
-| `slugify` | `slugify` package | `({ valueToSlugify, data, req }) => string \| undefined`. Runs on the server and may be async. |
-| `localized` | `false` | Localizes `slug` (and `slugMode`). The default slugify then applies rules for the active locale. |
-| `modeToggle` | `false` | Adds the persisted Auto/Manual mode described above. |
+| Option       | Default           | Description                                                                                      |
+| ------------ | ----------------- | ------------------------------------------------------------------------------------------------ |
+| `source`     | required          | Path of the source field from the document root, for example `title` or `meta.title`.            |
+| `slugify`    | `slugify` package | `({ valueToSlugify, data, req }) => string \| undefined`. Runs on the server and may be async.   |
+| `localized`  | `false`           | Localizes `slug` (and `slugMode`). The default slugify then applies rules for the active locale. |
+| `modeToggle` | `false`           | Adds the persisted Auto/Manual mode described above.                                             |
 
 The field sets no `admin.position`; place it where you need it. With `modeToggle` it is a `row` containing `slugMode` and `slug`.
 
@@ -94,10 +94,10 @@ The admin previews generated slugs live. With a custom `slugify`, the preview ca
 
 ## Exports
 
-| Path | Exports |
-| --- | --- |
-| `@klnap/payload-slug` | `slugField`, `slug`, `generateSlug`, `slugFieldTranslations`, types `SlugFieldArgs`, `SlugifyFunction`, `SlugMode` |
-| `@klnap/payload-slug/admin/SlugField` | Admin component (import map only) |
+| Path                                  | Exports                                                                                                            |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `@klnap/payload-slug`                 | `slugField`, `slug`, `generateSlug`, `slugFieldTranslations`, types `SlugFieldArgs`, `SlugifyFunction`, `SlugMode` |
+| `@klnap/payload-slug/admin/SlugField` | Admin component (import map only)                                                                                  |
 
 ## Compatibility
 

@@ -22,16 +22,19 @@
   "license": "MIT",
   "author": "klnap",
   "type": "module",
+  "packageManager": "bun@1.4.5",
   "sideEffects": [
     "**/*.css"
   ],
   "exports": {
     ".": {
       "types": "./dist/exports/index.d.ts",
+      "import": "./dist/exports/index.js",
       "default": "./dist/exports/index.js"
     },
     "./admin/SlugField": {
       "types": "./dist/exports/admin/SlugField.d.ts",
+      "import": "./dist/exports/admin/SlugField.js",
       "default": "./dist/exports/admin/SlugField.js"
     }
   },
@@ -45,10 +48,15 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json && mkdir -p dist/styles && cp src/styles/*.css dist/styles/ && sed -i \"/\\.css.;/d\" dist/components/slug-field/slug-field.d.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "bun test",
-    "lint": "biome check .",
+    "lint": "biome lint .",
+    "format": "biome format .",
+    "format:write": "biome format --write .",
     "knip": "knip",
-    "check:package": "publint --strict && attw --pack . --profile esm-only",
-    "prepack": "bun run build"
+    "verify:package": "publint --strict && attw --profile esm-only --pack .",
+    "check": "bun run format && bun run lint && bun run typecheck && bun run knip && bun test && bun run build && bun run verify:package",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:version-check": "bun run changeset:version && bun run check"
   },
   "peerDependencies": {
     "@payloadcms/ui": ">=3.94.1 <4",
@@ -60,16 +68,18 @@
     "slugify": "^1.6.9"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.5",
+    "@arethetypeswrong/cli": "0.18.5",
     "@biomejs/biome": "2.6.8",
+    "@changesets/cli": "3.0.3",
     "@payloadcms/db-sqlite": "3.94.1",
     "@payloadcms/ui": "3.94.1",
-    "@types/bun": "^1.4.4",
+    "@types/bun": "1.4.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "knip": "^6.48.0",
+    "knip": "6.48.0",
+    "npm": "12.2.3",
     "payload": "3.94.1",
-    "publint": "^0.3.25",
+    "publint": "0.3.25",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "typescript": "7.0.2"
@@ -78,6 +88,7 @@
     "node": "^22.23.5 || ^24.22.3 || >=26.13.1"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

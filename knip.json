@@ -1,4 +1,6 @@
 {
+  "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["src/exports/index.ts", "src/exports/admin/SlugField.ts"],
-  "project": ["src/**/*.{ts,tsx}"]
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreDependencies": ["npm"]
 }
