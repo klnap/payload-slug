@@ -26,9 +26,18 @@ How to Write Better Documentation
 
 ## Why?
 
-Article titles change, but published URLs often should not. Titles may also live inside nested groups, and editors may need to choose whether a slug stays fixed or keeps following its source. This field previews changes as editors type, preserves a saved slug by default, and can persist an explicit Auto/Manual choice.
+A slug becomes part of a public URL, and changing it breaks links, bookmarks, and search results. Titles still change, so the slug has to be decided on purpose: sometimes it should follow the title, and sometimes it should stay fixed once the page is live.
 
-Payload's built-in `slugField` already supports source-based generation, locking, and on-demand regeneration. This package adds configurable document-root source paths and optional persisted Auto/Manual behavior.
+This package makes that decision explicit:
+
+- **Live preview.** While a slug is empty or still generated, it follows its source as editors type.
+- **Stable by default.** An update that omits `slug` keeps the stored value. A saved slug does not change because its title did.
+- **Explicit Auto/Manual.** With `modeToggle`, each document, and each locale, stores whether its slug follows the source (Auto) or is fixed (Manual).
+- **Any source location.** `source` is a dot-separated path from the document root, so `hero.title` works even when the slug sits elsewhere in the schema.
+- **Server-side rules.** Submitted slugs are normalized on the server. In Manual mode, a value that normalizes to nothing is rejected. The slug is always required, indexed, and unique.
+- **Custom rules.** A `slugify` function can replace the default rules, and the admin preview calls it through the `slug()` endpoint.
+
+Payload's built-in `slugField` already covers source-based generation, locking, and on-demand regeneration. Use it when that is enough. Use this package when you need nested source paths, a persisted Auto/Manual choice per locale, or a custom slug policy shown live in the admin.
 
 ## Features
 
