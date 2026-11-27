@@ -39,7 +39,7 @@ Payload's built-in `slugField` already supports source-based generation, locking
 - Apply custom synchronous or asynchronous slugification.
 - Normalize generated and submitted slugs on the server.
 - Use Payload's required, indexed, unique field configuration.
-- Add English, Polish, and German admin translations with the plugin.
+- Ship English admin strings with the plugin; override any of them in your Payload config.
 
 ## Installation
 
@@ -57,9 +57,9 @@ npm install @klnap/payload-slug
 
 `slugField({ source: "title" })` defines the required `slug` field and its admin and save behavior. The built-in slugifier works without plugin registration.
 
-`slug()` registers the package's English, Polish, and German admin translations and the endpoint used to preview custom slugification in collection fields. Basic fields and their built-in slugifier do not need it.
+`slug()` registers the package's English admin strings and the endpoint used to preview custom slugification in collection fields. Basic fields and their built-in slugifier do not need it.
 
-Import `slug` and add it to the `plugins` array in your existing `buildConfig({...})` configuration. Preserve any plugins already there:
+Import `slug` and add it to the `plugins` array in your existing `buildConfig({...})` configuration:
 
 ```ts
 import { slug } from "@klnap/payload-slug";
@@ -68,17 +68,37 @@ import { slug } from "@klnap/payload-slug";
 plugins: [slug()],
 ```
 
+To change a label or add another language, set the strings under `i18n.translations` in your Payload config. Your values override the package defaults for the same keys:
+
+```ts
+i18n: {
+  translations: {
+    fr: {
+      slug: {
+        field: {
+          modeAuto: "Auto",
+          modeManual: "Manuel",
+          switchToManual: "Passer en mode Manuel",
+          switchToAuto: "Passer en mode Auto",
+          generate: "Générer le slug depuis la source",
+        },
+      },
+    },
+  },
+},
+```
+
 Payload generates the admin import map at startup, during development hot reload, and during builds. It generates types at development startup and during `payload build`. Do not edit these generated files. Run `payload generate:importmap` or `payload generate:types` manually only when `admin.importMap.autoGenerate` or `typescript.autoGenerate` is disabled, or you need generation outside those flows.
 
 ### Slug behavior
 
 The admin preview is live feedback; the field hook determines the saved value.
 
-With the default field, an empty slug follows the title as it changes. Typing a slug stops live following; Generate replaces it from the current title. Clearing the admin input resumes live generation. On save, a submitted slug is normalized, a cleared slug is generated from an available source, and an update that omits `slug` preserves the stored value. A non-empty submitted value that normalizes to empty is rejected without Auto mode or in Manual mode.
+With the default field, an empty slug follows the title as it changes. Typing a slug stops live following; Generate replaces it from the current title. Clearing the admin input resumes live generation. On save, a submitted slug is normalized, a cleared slug is generated from an available source, and an update that omits `slug` preserves the stored value. A non-empty submitted value that normalizes to empty is rejected when `modeToggle` is off or the mode is Manual.
 
-Slugs are required and cannot be saved empty. With `modeToggle`, Auto is read-only; switch to Manual to edit. An explicitly empty Manual slug fails validation. In the default configuration and Auto mode, an API update with `slug: ""` regenerates from the submitted or stored source when available; if no source is usable on update, the stored slug remains.
+Slugs are required and cannot be saved empty. With `modeToggle`, Auto is read-only; switch to Manual to edit. An explicitly empty Manual slug fails validation. Without `modeToggle` or in Auto mode, an API update with `slug: ""` regenerates from the submitted or stored source when available; if no source is usable on update, the stored slug remains.
 
-If a create has no usable source or submitted slug, the server can store a temporary `draft-<id>` slug. This can happen whether or not Payload marks the document as a draft. Without Auto mode, the placeholder can remain after a later title-only update; regenerate or replace it explicitly. Auto mode replaces it when a usable source becomes available.
+If a create has no usable source or submitted slug, the server can store a temporary `draft-<id>` slug. This can happen whether or not Payload marks the document as a draft. Without `modeToggle` or in Manual mode, the placeholder can remain after a later title-only update; regenerate or replace it explicitly. Auto mode replaces it when a usable source becomes available.
 
 ### Nested source fields
 
@@ -131,7 +151,7 @@ Payload content localization stores each enabled locale's field values. Configur
 
 ```ts
 localization: {
-  locales: ["en", "pl", "de"],
+  locales: ["en", "fr", "de"],
   defaultLocale: "en",
 },
 collections: [
@@ -156,17 +176,17 @@ collections: [
 
 The default slugifier produces these values for the configured locales:
 
-| Locale | Article title                     | Generated slug                      |
-| ------ | --------------------------------- | ----------------------------------- |
-| en     | How to Write Better Documentation | `how-to-write-better-documentation` |
-| pl     | Jak pisać lepszą dokumentację     | `jak-pisac-lepsza-dokumentacje`     |
-| de     | Bessere Dokumentation schreiben   | `bessere-dokumentation-schreiben`   |
+| Locale | Article title                              | Generated slug                               |
+| ------ | ------------------------------------------ | -------------------------------------------- |
+| en     | How to Write Better Documentation          | `how-to-write-better-documentation`          |
+| fr     | Comment écrire une meilleure documentation | `comment-ecrire-une-meilleure-documentation` |
+| de     | Bessere Dokumentation schreiben            | `bessere-dokumentation-schreiben`            |
 
 Each locale can keep its own title, slug, and Auto/Manual choice. Changing a title regenerates that locale's slug in Auto mode; Manual mode keeps it. The active Payload locale is passed to the built-in slugifier only when the slug field is localized. Locale-specific transliteration applies when the `slugify` package recognizes the code; unknown codes use its default mappings.
 
 Payload fallback can return another locale's value from a read, but it does not supply that value as a missing localized source to the slug field hook. Auto generation needs a usable source in the update or stored document for that locale; read fallback alone does not provide it. An update in a locale without its own source can therefore fail required slug validation, even when reads use fallback. Updating one locale leaves other locales' stored slugs and modes unchanged. An unlocalized source can be used to generate localized slugs in each locale.
 
-Content localization is separate from admin internationalization. The `slug()` plugin registers this package's admin strings for English, Polish, and German. It does not add translations for every language supported by Payload.
+Content localization is separate from admin internationalization. The `slug()` plugin registers only English admin strings. Other admin languages come from your own `i18n.translations`.
 
 ### Custom slugification
 
@@ -195,7 +215,7 @@ The Future of Web Development → future-of-web-development
 A Guide to TypeScript → guide-to-typescript
 ```
 
-The function is deterministic and idempotent, and returns `undefined` when no slug remains. Without Auto mode, custom functions also normalize submitted slugs, so make them idempotent.
+The function is deterministic and idempotent, and returns `undefined` when no slug remains. When `modeToggle` is off or the mode is Manual, custom functions also normalize submitted slugs, so make them idempotent.
 
 The callback runs on saves and, with `slug()` registered, for collection previews through `POST /api/payload-slug/slugify`. It receives `{ valueToSlugify, data, req }`, where `valueToSlugify` is `unknown` and `req` is a Payload request. It may return a string or `undefined`, synchronously or asynchronously.
 
@@ -216,21 +236,20 @@ The factory creates `slug` as a required, indexed, unique text field. It adds th
 
 ### Normalization and uniqueness
 
-The default slugifier lowercases, trims, and removes characters outside its URL-safe output. It transliterates common Latin characters, including the Polish and German examples above; it does not transliterate every script, so unsupported characters may be removed. The built-in slugifier does not add numeric collision suffixes.
+The default slugifier lowercases, trims, and removes characters outside its URL-safe output. It transliterates common Latin characters, including the French and German examples above; it does not transliterate every script, so unsupported characters may be removed. The built-in slugifier does not add numeric collision suffixes.
 
-The factory sets Payload's `unique: true` field option. SQLite and `@payloadcms/db-postgres@3.94.1` on PostgreSQL 16.15 create a unique index on `slug`, or on `(slug, _locale)` for localized slugs. Duplicate auto-generated or manual values fail within a locale; identical slugs across locales are allowed. Payload's duplicate operation appends its localized copy label to unique text fields; the default or Manual slug hook normalizes that into a distinct slug, such as `-copy` in English. In Auto mode, duplication can fail because the hook regenerates from the unchanged source. Other database adapters are unverified.
+The factory sets Payload's `unique: true` field option, which asks the database adapter for a unique index. The repository's integration tests verify that a duplicate slug fails on SQLite. They do not cover PostgreSQL or other adapters, localized unique indexes, or document duplication. In Auto mode, a duplicated document regenerates the same slug from its unchanged source, so the unique check can reject it.
 
 ### Public API
 
 The package root exports:
 
-| Export                  | Signature or purpose                                                       |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `slugField`             | `(args: SlugFieldArgs) => Field`                                           |
-| `slug`                  | `() => Plugin`; registers translations and the custom preview endpoint.    |
-| `generateSlug`          | `(source: string, options?: GenerateSlugOptions) => string`                |
-| `slugFieldTranslations` | English, Polish, and German admin strings.                                 |
-| Public types            | `GenerateSlugOptions`, `SlugFieldArgs`, `SlugifyFunction`, and `SlugMode`. |
+| Export         | Signature or purpose                                                       |
+| -------------- | -------------------------------------------------------------------------- |
+| `slugField`    | `(args: SlugFieldArgs) => Field`                                           |
+| `slug`         | `() => Plugin`; registers English strings and the custom preview endpoint. |
+| `generateSlug` | `(source: string, options?: GenerateSlugOptions) => string`                |
+| Public types   | `GenerateSlugOptions`, `SlugFieldArgs`, `SlugifyFunction`, and `SlugMode`. |
 
 `GenerateSlugOptions` accepts an optional `{ locale?: string }`. `SlugifyFunction` receives `{ valueToSlugify, data, req }` and may return `string | undefined` or a promise of either value.
 
