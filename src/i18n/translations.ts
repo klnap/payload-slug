@@ -6,28 +6,10 @@ const fieldEn = {
   generate: "Generate slug from source",
 };
 
-const fieldPl = {
-  modeAuto: "Auto",
-  modeManual: "Manual",
-  switchToManual: "Przełącz na Manual",
-  switchToAuto: "Przełącz na Auto",
-  generate: "Wygeneruj slug ze źródła",
-};
-
-const fieldDe = {
-  modeAuto: "Auto",
-  modeManual: "Manual",
-  switchToManual: "Zu Manual wechseln",
-  switchToAuto: "Zu Auto wechseln",
-  generate: "Slug aus der Quelle erzeugen",
-};
-
 /**
- * Merge into host `config.i18n.translations` (e.g. `deepMergeSimple(host, slugFieldTranslations)`).
- * Override keys under `slug.field` per locale in the host config.
+ * Package-owned English admin strings. Not exported from the package root.
+ * Hosts override any key in their own `config.i18n.translations` for each locale.
  */
-export const slugFieldTranslations = {
+export const englishSlugFieldTranslations = {
   en: { slug: { field: fieldEn } },
-  pl: { slug: { field: fieldPl } },
-  de: { slug: { field: fieldDe } },
 } as const;
