@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+### Minor Changes
+
+- bafde24: Ship English-only admin strings. Remove the `slugFieldTranslations` export; override labels for any locale through `i18n.translations` in the Payload config.
+
 ## 0.1.2
 
 ### Patch Changes
