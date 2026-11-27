@@ -1,8 +1,6 @@
 # `@klnap/payload-slug`
 
-Slug fields for Payload CMS with live generation, nested source fields, and optional persistent Auto/Manual control.
-
-Generate slugs as editors type. Keep saved slugs stable by default, or synchronize them with their source on every save.
+A Payload CMS field that generates URL-friendly slugs from top-level or nested source paths and enforces uniqueness, with optional persisted Auto/Manual control.
 
 ```ts
 import { slugField } from "@klnap/payload-slug";
@@ -39,7 +37,7 @@ Payload's built-in `slugField` already supports source-based generation, locking
 - Read dot-separated paths through nested document objects.
 - Localize slugs and, optionally, each locale's Auto/Manual choice.
 - Apply custom synchronous or asynchronous slugification.
-- Normalize and validate slugs on the server.
+- Normalize generated and submitted slugs on the server.
 - Use Payload's required, indexed, unique field configuration.
 - Add English, Polish, and German admin translations with the plugin.
 
@@ -57,25 +55,30 @@ npm install @klnap/payload-slug
 
 ### Basic usage
 
-`slugField({ source: 'title' })` adds a required `slug` text field generated from the article title. The field works without registering the `slug()` plugin when you use the built-in slugifier.
+`slugField({ source: "title" })` defines the required `slug` field and its admin and save behavior. The built-in slugifier works without plugin registration.
 
-Add the plugin when you need its English, Polish, and German admin translations, or when a custom slugifier needs an admin preview. Without the plugin, the field uses English labels.
+`slug()` registers the package's English, Polish, and German admin translations and the endpoint used to preview custom slugification in collection fields. Basic fields and their built-in slugifier do not need it.
 
-Payload generates the component import map at startup and during development hot reload. It also generates types automatically during development and builds unless you disable automatic generation. Run `payload generate:importmap` or `payload generate:types` manually only when automatic generation is disabled or you need to refresh them outside those flows.
+Import `slug` and add it to the `plugins` array in your existing `buildConfig({...})` configuration. Preserve any plugins already there:
+
+```ts
+import { slug } from "@klnap/payload-slug";
+
+// Add to the plugins array in your existing buildConfig({...}):
+plugins: [slug()],
+```
+
+Payload generates the admin import map at startup, during development hot reload, and during builds. It generates types at development startup and during `payload build`. Do not edit these generated files. Run `payload generate:importmap` or `payload generate:types` manually only when `admin.importMap.autoGenerate` or `typescript.autoGenerate` is disabled, or you need generation outside those flows.
 
 ### Slug behavior
 
-The admin preview is not the persisted value. Payload runs the field hook on save and stores the returned value.
+The admin preview is live feedback; the field hook determines the saved value.
 
-| Situation                 | Admin behavior                                                                         | Save behavior                                       |
-| ------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| New article, empty slug   | Follows the title as it changes.                                                       | Generates from the source if no slug was submitted. |
-| Editor changes the slug   | Stops following the title. The Generate control can replace it from the current title. | Normalizes the submitted slug.                      |
-| Saved slug, title changes | Keeps the slug unchanged.                                                              | Keeps the stored slug when the update omits it.     |
+With the default field, an empty slug follows the title as it changes. Typing a slug stops live following; Generate replaces it from the current title. Clearing the admin input resumes live generation. On save, a submitted slug is normalized, a cleared slug is generated from an available source, and an update that omits `slug` preserves the stored value. A non-empty submitted value that normalizes to empty is rejected without Auto mode or in Manual mode.
 
-In the default configuration, the admin follows the title only while the slug is empty or still contains a value it generated. A manually edited slug is not overwritten by later title changes. Clearing it resumes live generation.
+Slugs are required and cannot be saved empty. With `modeToggle`, Auto is read-only; switch to Manual to edit. An explicitly empty Manual slug fails validation. In the default configuration and Auto mode, an API update with `slug: ""` regenerates from the submitted or stored source when available; if no source is usable on update, the stored slug remains.
 
-If a create has no usable source and no submitted slug, the server stores a `draft-<id>` placeholder. It uses a non-empty string `data.id` when available, otherwise a random UUID; localized slugs also append the request locale, or `default` if none is set. This happens on create, not only when Payload marks the document as a draft. In the default configuration, that non-empty placeholder stays stable if a later update omits the slug. Click Generate or clear the field to replace it. Auto mode replaces it when a usable source is saved.
+If a create has no usable source or submitted slug, the server can store a temporary `draft-<id>` slug. This can happen whether or not Payload marks the document as a draft. Without Auto mode, the placeholder can remain after a later title-only update; regenerate or replace it explicitly. Auto mode replaces it when a usable source becomes available.
 
 ### Nested source fields
 
@@ -84,18 +87,18 @@ If a create has no usable source and no submitted slug, the server stores a `dra
 ```ts
 fields: [
   {
-    name: 'hero',
-    type: 'group',
+    name: "hero",
+    type: "group",
     fields: [
       {
-        name: 'title',
-        type: 'text',
+        name: "title",
+        type: "text",
         required: true,
       },
     ],
   },
   slugField({
-    source: 'hero.title',
+    source: "hero.title",
   }),
 ],
 ```
@@ -113,14 +116,14 @@ slugField({
 });
 ```
 
-| Mode   | Behavior                                                                        |
-| ------ | ------------------------------------------------------------------------------- |
-| Auto   | Follows the source in the admin and regenerates from it on every save.          |
-| Manual | Keeps the editor's slug unless they change it; submitted values are normalized. |
+| Mode   | Admin behavior                                         | Save behavior                                                                                    |
+| ------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Auto   | Follows the source; the slug is read-only.             | Generates from an available source; otherwise preserves the submitted or stored value as-is.     |
+| Manual | Allows edits and on-demand generation from the source. | Keeps the submitted slug and normalizes it; an explicitly empty value fails required validation. |
 
-The default configuration adds no mode field. With `modeToggle: true`, the factory adds a hidden, persisted `slugMode` select field beside `slug`. It accepts `auto` and `manual`, defaults to `auto`, and is stored in the database. The choice persists across editing sessions. Existing documents without a saved mode resolve to Auto on update.
+The default configuration adds no mode field. With `modeToggle: true`, the factory adds a hidden, persisted `slugMode` select beside `slug`. It accepts `auto` and `manual`, defaults to `auto`, and is stored in the database. Existing documents without a saved mode resolve to Auto.
 
-Manual mode preserves editorial control when the source changes. Auto mode can change an article's slug on any save, including a previously published article. When both `localized` and `modeToggle` are enabled, each locale stores its own mode.
+Manual mode preserves the slug when the source changes. Auto mode may change a published article's URL when its source changes. If the source is empty or unavailable in both the update and stored document, Auto preserves the existing slug. When both `localized` and `modeToggle` are enabled, each locale stores its own mode.
 
 ### Localization
 
@@ -128,21 +131,21 @@ Payload content localization stores each enabled locale's field values. Configur
 
 ```ts
 localization: {
-  locales: ['en', 'pl', 'de'],
-  defaultLocale: 'en',
+  locales: ["en", "pl", "de"],
+  defaultLocale: "en",
 },
 collections: [
   {
-    slug: 'articles',
+    slug: "articles",
     fields: [
       {
-        name: 'title',
-        type: 'text',
+        name: "title",
+        type: "text",
         required: true,
         localized: true,
       },
       slugField({
-        source: 'title',
+        source: "title",
         localized: true,
         modeToggle: true,
       }),
@@ -151,7 +154,7 @@ collections: [
 ],
 ```
 
-The default slugifier produces these values:
+The default slugifier produces these values for the configured locales:
 
 | Locale | Article title                     | Generated slug                      |
 | ------ | --------------------------------- | ----------------------------------- |
@@ -159,15 +162,15 @@ The default slugifier produces these values:
 | pl     | Jak pisać lepszą dokumentację     | `jak-pisac-lepsza-dokumentacje`     |
 | de     | Bessere Dokumentation schreiben   | `bessere-dokumentation-schreiben`   |
 
-Each locale can keep its own title, slug, and Auto/Manual choice. Changing a title regenerates its slug in Auto mode; Manual mode keeps that locale's slug. The active Payload locale is passed to the default slugifier when the slug field is localized. Locale-specific transliteration applies when the `slugify` package recognizes that locale code; unknown codes use its default mappings.
+Each locale can keep its own title, slug, and Auto/Manual choice. Changing a title regenerates that locale's slug in Auto mode; Manual mode keeps it. The active Payload locale is passed to the built-in slugifier only when the slug field is localized. Locale-specific transliteration applies when the `slugify` package recognizes the code; unknown codes use its default mappings.
 
-Payload's `localization.fallback` setting controls how missing localized values are read. It defaults to `true`; API callers can select or disable fallback with `fallbackLocale`. Fallback affects Payload's returned source value; it does not create a translation. To inspect stored values by locale, request `locale: 'all'` with fallback disabled.
+Payload fallback can return another locale's value from a read, but it does not supply that value as a missing localized source to the slug field hook. Auto generation needs a usable source in the update or stored document for that locale; read fallback alone does not provide it. An update in a locale without its own source can therefore fail required slug validation, even when reads use fallback. Updating one locale leaves other locales' stored slugs and modes unchanged. An unlocalized source can be used to generate localized slugs in each locale.
 
 Content localization is separate from admin internationalization. The `slug()` plugin registers this package's admin strings for English, Polish, and German. It does not add translations for every language supported by Payload.
 
 ### Custom slugification
 
-Use a custom function for editorial normalization that the default rules do not provide:
+Custom slugification is for application-specific URL policies, not a universal SEO rule. This example omits selected English articles:
 
 ```ts
 import { generateSlug, slugField } from "@klnap/payload-slug";
@@ -177,40 +180,37 @@ slugField({
   slugify: ({ valueToSlugify }) => {
     if (typeof valueToSlugify !== "string") return undefined;
 
-    return generateSlug(valueToSlugify.replace(/&/g, " and "));
+    return (
+      generateSlug(valueToSlugify)
+        .split("-")
+        .filter((word) => !["a", "an", "the"].includes(word))
+        .join("-") || undefined
+    );
   },
 });
 ```
 
 ```text
-News & Updates
-→ news-and-updates
+The Future of Web Development → future-of-web-development
+A Guide to TypeScript → guide-to-typescript
 ```
 
-The ampersand function is idempotent: normalizing `news-and-updates` again returns the same value. Custom functions also run on submitted manual slugs, so make them idempotent; a prefix-only function can add its prefix again on a later save.
+The function is deterministic and idempotent, and returns `undefined` when no slug remains. Without Auto mode, custom functions also normalize submitted slugs, so make them idempotent.
 
-Register `slug()` in the existing Payload config to enable the custom admin preview:
+The callback runs on saves and, with `slug()` registered, for collection previews through `POST /api/payload-slug/slugify`. It receives `{ valueToSlugify, data, req }`, where `valueToSlugify` is `unknown` and `req` is a Payload request. It may return a string or `undefined`, synchronously or asynchronously.
 
-```ts
-import { slug } from '@klnap/payload-slug'
-
-plugins: [slug()],
-```
-
-The callback runs on server saves and, with the plugin, for collection previews through `POST /api/payload-slug/slugify`. It receives `{ valueToSlugify, data, req }`; `valueToSlugify` is `unknown`, `data` is the current form data, and `req` is a Payload request. It may return a string or `undefined`, synchronously or asynchronously.
-
-The preview requires a signed-in user with read access to the collection. Treat preview `data` as user-controlled input. Custom functions still run for global saves, but the preview endpoint resolves collections only; global custom slugs have no admin preview.
+The preview requires an authenticated user with read access to the collection. Treat preview `data` as user-controlled input. Custom functions run on global saves, but the endpoint supports collection previews only.
 
 ## Configuration
 
 `slugField(options)` accepts:
 
-| Option       | Type              | Default  | Description                                                   |
-| ------------ | ----------------- | -------- | ------------------------------------------------------------- |
-| `source`     | `string`          | Required | Document-root source path.                                    |
-| `slugify`    | `SlugifyFunction` | Built-in | Custom slugification function.                                |
-| `localized`  | `boolean`         | `false`  | Localizes `slug` and `slugMode` when `modeToggle` is enabled. |
-| `modeToggle` | `boolean`         | `false`  | Adds persistent Auto/Manual control.                          |
+| Option       | Type              | Default  | Description                                          |
+| ------------ | ----------------- | -------- | ---------------------------------------------------- |
+| `source`     | `string`          | Required | Dot-separated path from the document root.           |
+| `slugify`    | `SlugifyFunction` | Built-in | Custom slugification function.                       |
+| `localized`  | `boolean`         | `false`  | Localizes `slug` and, with `modeToggle`, `slugMode`. |
+| `modeToggle` | `boolean`         | `false`  | Adds persistent Auto/Manual control.                 |
 
 The factory creates `slug` as a required, indexed, unique text field. It adds the hidden, persisted `slugMode` select only when `modeToggle` is enabled.
 
@@ -218,9 +218,7 @@ The factory creates `slug` as a required, indexed, unique text field. It adds th
 
 The default slugifier lowercases, trims, and removes characters outside its URL-safe output. It transliterates common Latin characters, including the Polish and German examples above; it does not transliterate every script, so unsupported characters may be removed. The built-in slugifier does not add numeric collision suffixes.
 
-The factory sets Payload's `unique: true` field option. With the SQLite adapter used in this package's integration tests, duplicate slugs in the same locale fail, while the same slug in different locales is allowed. Other database adapters may implement localized uniqueness differently and are not verified here. Payload's duplicate operation copies the slug, so duplicating an article without changing its slug fails uniqueness.
-
-An explicitly submitted slug that normalizes to an empty string is rejected. On create, when generation has no usable source and the submitted slug is empty, the hook uses the `draft-<id>` placeholder described under [Slug behavior](#slug-behavior).
+The factory sets Payload's `unique: true` field option. SQLite and `@payloadcms/db-postgres@3.94.1` on PostgreSQL 16.15 create a unique index on `slug`, or on `(slug, _locale)` for localized slugs. Duplicate auto-generated or manual values fail within a locale; identical slugs across locales are allowed. Payload's duplicate operation appends its localized copy label to unique text fields; the default or Manual slug hook normalizes that into a distinct slug, such as `-copy` in English. In Auto mode, duplication can fail because the hook regenerates from the unchanged source. Other database adapters are unverified.
 
 ### Public API
 
@@ -244,7 +242,7 @@ The package root exports:
 | `react`, `react-dom`        | `~19.0.9 \|\| ~19.1.10 \|\| ~19.2.9 \|\| ^19.3.1` | `19.3.1`                                     |
 | Node.js                     | `^22.23.5 \|\| ^24.22.3 \|\| >=26.13.1`           | Minimums `22.23.5`, `24.22.3`, and `26.13.1` |
 
-The package is ESM-only. Its admin field imports CSS, so the application bundler must support CSS imports from dependencies. The slug field's server hooks work on collections and globals; custom admin previews support collections only. Localized uniqueness was verified with SQLite, not every Payload adapter.
+The package is ESM-only. Its admin field imports CSS, so the application bundler must support CSS imports from dependencies. Server hooks work on collections and globals.
 
 ## Documentation
 
