@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+### Patch Changes
+
+- 87b09ec: Ignore local Claude Code settings in the repository. No published package or runtime change.
+
 ## 0.2.1
 
 ### Patch Changes
