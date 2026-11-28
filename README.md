@@ -154,6 +154,15 @@ The default configuration adds no mode field. With `modeToggle: true`, the facto
 
 Manual mode preserves the slug when the source changes. Auto mode may change a published article's URL when its source changes. If the source is empty or unavailable in both the update and stored document, Auto preserves the existing slug. When both `localized` and `modeToggle` are enabled, each locale stores its own mode.
 
+The sequence below comes from a Payload 3.94.1 fixture with `modeToggle: true`:
+
+1. **Auto:** the slug follows the title while the article is created.
+   ![Auto mode: slug hello-world follows the title](./docs/assets/slug-auto-create.png)
+2. **Auto, existing document:** editing the title updates the slug before save, then saves `spring-launch-notes`.
+   ![Auto mode: slug follows an edited title](./docs/assets/slug-auto-follows-source.png)
+3. **Manual:** after switching modes and entering `my-custom-slug`, a later title change keeps the manual slug.
+   ![Manual mode: custom slug kept after the title changes](./docs/assets/slug-manual-preserved.png)
+
 ### Localization
 
 Payload content localization stores each enabled locale's field values. Configure locales in the Payload config, then localize the article title and slug:
