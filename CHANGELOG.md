@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5
+
+### Patch Changes
+
+- cf6416a: Release workflow only: verify each published release after publication, matching npm-package-template. No runtime change.
+
 ## 0.2.4
 
 ### Patch Changes
