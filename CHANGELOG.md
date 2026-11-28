@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+### Patch Changes
+
+- 45e5cf3: Document the Auto and Manual slug sequence with screenshots from a Payload Admin fixture. No runtime change.
+
 ## 0.2.2
 
 ### Patch Changes
