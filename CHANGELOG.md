@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+### Patch Changes
+
+- e07f247: Point README screenshots at the v0.2.3 tag so they render on npm and GitHub and always show the documented state. No runtime change.
+
 ## 0.2.3
 
 ### Patch Changes
