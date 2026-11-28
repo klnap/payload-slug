@@ -1,6 +1,6 @@
 {
   "name": "@klnap/payload-slug",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A Payload CMS field that generates URL-friendly slugs from top-level or nested source paths and enforces uniqueness, with optional persisted Auto/Manual control.",
   "keywords": [
     "payload",
