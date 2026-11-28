@@ -157,11 +157,11 @@ Manual mode preserves the slug when the source changes. Auto mode may change a p
 The sequence below comes from a Payload 3.94.1 fixture with `modeToggle: true`:
 
 1. **Auto:** the slug follows the title while the article is created.
-   ![Auto mode: slug hello-world follows the title](./docs/assets/slug-auto-create.png)
+   ![Auto mode: slug hello-world follows the title](https://github.com/klnap/payload-slug/raw/v0.2.3/docs/assets/slug-auto-create.png)
 2. **Auto, existing document:** the slug follows the edited title. The saved value is `spring-launch-notes`.
-   ![Auto mode: slug follows an edited title](./docs/assets/slug-auto-follows-source.png)
+   ![Auto mode: slug follows an edited title](https://github.com/klnap/payload-slug/raw/v0.2.3/docs/assets/slug-auto-follows-source.png)
 3. **Manual:** after switching modes and entering `my-custom-slug`, the slug stays `my-custom-slug` when the title changes. The screenshot shows the saved state after a title change to "Summer Update".
-   ![Manual mode: custom slug kept after the title changes](./docs/assets/slug-manual-preserved.png)
+   ![Manual mode: custom slug kept after the title changes](https://github.com/klnap/payload-slug/raw/v0.2.3/docs/assets/slug-manual-preserved.png)
 
 ### Localization
 
